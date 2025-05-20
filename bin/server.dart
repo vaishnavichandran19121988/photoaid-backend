@@ -9,7 +9,7 @@ import 'package:backend/services/chat_service.dart'; // ✅ NEW
 import 'package:backend/repositories/chat_repository.dart'; // ✅ NEW
 import 'package:backend/repositories/session_repository.dart'; // ✅ NEW
 import 'package:backend/repositories/user_repository.dart'; // ✅ NEW
-
+import 'package:backend/database/migrations.dart';
 import '../routes/user_routes.dart';
 import '../routes/session_routes.dart';
 import '../routes/chat_routes.dart'; // ✅ NEW

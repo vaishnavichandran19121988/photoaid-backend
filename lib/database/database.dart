@@ -1,11 +1,11 @@
 import 'package:postgres/postgres.dart';
 
 /// 🔐 Replace with your real Railway DB values
-const String dbHost = 'postgres.railway.internal';
-const int dbPort = 5432;
+const String dbHost = 'mainline.proxy.rlwy.net';
+const int dbPort = 25942;
 const String dbName = 'railway';
 const String dbUser = 'postgres';
-const String dbPassword = 'abc123xyz';
+const String dbPassword = 'kBQSGGjSXqDVomrjlPBYwpzkdbiOMcZB';
 
 Connection? _singletonConnection;
 Pool<Connection>? _connectionPool;

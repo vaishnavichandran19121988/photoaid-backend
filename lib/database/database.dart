@@ -1,24 +1,25 @@
-import 'dart:io'; // ✅ Use Dart's built-in env
 import 'package:postgres/postgres.dart';
 
-final _env = Platform.environment;
-
-final bool useConnectionPool =
-    _env['USE_CONNECTION_POOL']?.toLowerCase() == 'true';
+/// 🔐 Replace with your real Railway DB values
+const String dbHost = 'postgres.railway.internal';
+const int dbPort = 5432;
+const String dbName = 'railway';
+const String dbUser = 'postgres';
+const String dbPassword = 'abc123xyz';
 
 Connection? _singletonConnection;
 Pool<Connection>? _connectionPool;
 
-/// Lazily initialize pool AFTER env is loaded
+/// Hardcoded pool
 Pool<Connection> getConnectionPool() {
   _connectionPool ??= Pool<Connection>.withEndpoints(
     [
       Endpoint(
-        host: _env['DB_HOST'] ?? 'MISSING_DB_HOST',
-        port: int.tryParse(_env['DB_PORT'] ?? '') ?? 5432,
-        database: _env['DB_NAME'] ?? 'MISSING_DB_NAME',
-        username: _env['DB_USER'] ?? 'MISSING_DB_USER',
-        password: _env['DB_PASSWORD'] ?? 'MISSING_DB_PASSWORD',
+        host: dbHost,
+        port: dbPort,
+        database: dbName,
+        username: dbUser,
+        password: dbPassword,
       ),
     ],
     settings: const PoolSettings(
@@ -29,48 +30,25 @@ Pool<Connection> getConnectionPool() {
   return _connectionPool!;
 }
 
-/// Prints environment variables for debugging
+/// Debug print
 void debugEnvVars() {
-  print("🧪 ENV KEYS: ${_env.keys.toList()}");
-  print("🔎 DB_HOST: ${_env['DB_HOST']}");
-  print("🔎 DB_PORT: ${_env['DB_PORT']}");
-  print("🔎 DB_NAME: ${_env['DB_NAME']}");
-  print("🔎 DB_USER: ${_env['DB_USER']}");
-  print("🔎 DB_PASSWORD: ${_env['DB_PASSWORD']}");
-  print("🔎 USE_CONNECTION_POOL: ${_env['USE_CONNECTION_POOL']}");
+  print("🔎 DB_HOST: $dbHost");
+  print("🔎 DB_PORT: $dbPort");
+  print("🔎 DB_NAME: $dbName");
+  print("🔎 DB_USER: $dbUser");
+  print("🔎 DB_PASSWORD: $dbPassword");
 }
 
-/// Use connection pool or singleton
+/// Connection runner
 Future<T> withDb<T>(Future<T> Function(Session) fn) async {
-  if (useConnectionPool) {
-    return getConnectionPool().run(fn);
-  } else {
-    final conn = await _getSingletonConnection();
-    return fn(conn);
-  }
+  return getConnectionPool().run(fn);
 }
 
-/// Singleton fallback (no pool)
-Future<Connection> _getSingletonConnection() async {
-  _singletonConnection ??= await Connection.open(
-    Endpoint(
-      host: _env['DB_HOST']!,
-      port: int.parse(_env['DB_PORT']!),
-      database: _env['DB_NAME']!,
-      username: _env['DB_USER']!,
-      password: _env['DB_PASSWORD']!,
-    ),
-    settings: const ConnectionSettings(
-      sslMode: SslMode.disable,
-    ),
-  );
-  return _singletonConnection!;
-}
-
-/// Cleanup connections
+/// Cleanup
 Future<void> closeDbConnections() async {
-  if (useConnectionPool && _connectionPool != null) {
+  if (_connectionPool != null) {
     await _connectionPool!.close();
+    _connectionPool = null;
   } else if (_singletonConnection != null) {
     await _singletonConnection!.close();
     _singletonConnection = null;

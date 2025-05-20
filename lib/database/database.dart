@@ -9,6 +9,8 @@ final bool useConnectionPool =
 
 Connection? _singletonConnection;
 
+
+
 final Pool<Connection>? _connectionPool = useConnectionPool
     ? Pool<Connection>.withEndpoints(
         [
@@ -26,6 +28,16 @@ final Pool<Connection>? _connectionPool = useConnectionPool
         ),
       )
     : null;
+
+
+void debugEnvVars() {
+  print("🔎 DB_HOST: ${_env['DB_HOST']}");
+  print("🔎 DB_PORT: ${_env['DB_PORT']}");
+  print("🔎 DB_NAME: ${_env['DB_NAME']}");
+  print("🔎 DB_USER: ${_env['DB_USER']}");
+  print("🔎 DB_PASSWORD: ${_env['DB_PASSWORD']}");
+  print("🔎 USE_CONNECTION_POOL: ${_env['USE_CONNECTION_POOL']}");
+}
 
 Future<Connection> _getSingletonConnection() async {
   _singletonConnection ??= await Connection.open(

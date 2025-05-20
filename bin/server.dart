@@ -26,6 +26,15 @@ Future<void> main() async {
 
   try {
     await withDb((session) async {
+
+       await runMigrations(session);
+      print('✅ Database connected and migrations complete.');
+    });
+  } catch (e) {
+    print('❌ Failed to connect to DB: $e');
+    exit(1);
+  }
+
       final result = await session.execute('SELECT 1');
       print('✅ Database connected: $result');
     });

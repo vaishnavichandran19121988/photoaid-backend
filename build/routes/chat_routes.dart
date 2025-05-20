@@ -1,0 +1,27 @@
+import 'dart:io';
+
+import 'chat/send_chat_message.dart';
+import 'chat/get_chat_messages.dart';
+
+class ChatRoutes {
+  Future<bool> handleRequest(HttpRequest request, int userId) async {
+    final path = request.uri.path;
+    final method = request.method;
+
+    // 📨 Send a new chat message
+    if (RegExp(r'^/api/chat/messages/\d+/send$').hasMatch(path) &&
+        method == 'POST') {
+      await handleSendChatMessage(request, userId);
+      return true;
+    }
+
+    // 📥 Get chat messages for a session (e.g., /api/chat/messages/1)
+    if (RegExp(r'^/api/chat/messages/\d+$').hasMatch(path) && method == 'GET') {
+      await handleGetChatMessages(request, userId);
+      return true;
+    }
+
+    // 🚫 No chat route matched
+    return false;
+  }
+}

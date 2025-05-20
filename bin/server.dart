@@ -22,7 +22,7 @@ final Map<int, List<WebSocket>> sessionSockets = {};
 
 Future<void> main() async {
   print('🚀 Starting PhotoAid HTTP Server...');
-  debugEnvVars(); 
+
 
   try {
     await withDb((session) async {
@@ -33,7 +33,7 @@ Future<void> main() async {
     print('❌ Failed to connect to DB: $e');
     exit(1);
   }
-
+   debugEnvVars(); 
   final server = await HttpServer.bind(InternetAddress.anyIPv4, 8080);
   print('✅ Server running at http://${server.address.address}:${server.port}');
 

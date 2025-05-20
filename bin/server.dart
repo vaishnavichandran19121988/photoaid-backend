@@ -5,29 +5,27 @@ import 'package:backend/database/database.dart';
 import 'package:backend/services/auth_service.dart';
 import 'package:backend/utils/jwt_utils.dart';
 import '../routes/rating_routes.dart';
-import 'package:backend/services/chat_service.dart'; // ✅ NEW
-import 'package:backend/repositories/chat_repository.dart'; // ✅ NEW
-import 'package:backend/repositories/session_repository.dart'; // ✅ NEW
-import 'package:backend/repositories/user_repository.dart'; // ✅ NEW
+import 'package:backend/services/chat_service.dart';
+import 'package:backend/repositories/chat_repository.dart';
+import 'package:backend/repositories/session_repository.dart';
+import 'package:backend/repositories/user_repository.dart';
 import 'package:backend/database/migrations.dart';
 import '../routes/user_routes.dart';
 import '../routes/session_routes.dart';
-import '../routes/chat_routes.dart'; // ✅ NEW
+import '../routes/chat_routes.dart';
 
 final userRoutes = UserRoutes();
 final sessionRoutes = SessionRoutes();
-final chatRoutes = ChatRoutes(); // ✅ NEW
+final chatRoutes = ChatRoutes();
 final ratingRoutes = RatingRoutes();
 final Map<int, List<WebSocket>> sessionSockets = {};
 
 Future<void> main() async {
   print('🚀 Starting PhotoAid HTTP Server...');
 
-
   try {
     await withDb((session) async {
-
-       await runMigrations(session);
+      await runMigrations(session);
       print('✅ Database connected and migrations complete.');
     });
   } catch (e) {
@@ -35,14 +33,6 @@ Future<void> main() async {
     exit(1);
   }
 
-      final result = await session.execute('SELECT 1');
-      print('✅ Database connected: $result');
-    });
-  } catch (e) {
-    print('❌ Failed to connect to DB: $e');
-    exit(1);
-  }
-   
   final server = await HttpServer.bind(InternetAddress.anyIPv4, 8080);
   print('✅ Server running at http://${server.address.address}:${server.port}');
 
@@ -62,6 +52,7 @@ Future<void> main() async {
       await request.response.close();
       continue;
     }
+
     if (path.startsWith('/ws/chat/')) {
       final sessionIdStr = path.split('/').last;
       final sessionId = int.tryParse(sessionIdStr);
@@ -93,7 +84,6 @@ Future<void> main() async {
             return;
           }
 
-          // ✅ Save message in DB
           final chatService = ChatService(
             ChatRepository(),
             SessionRepository(),
@@ -112,7 +102,6 @@ Future<void> main() async {
             return;
           }
 
-          // ✅ Build and broadcast message to all sockets in the session
           final messageJson = jsonEncode({
             'session_id': sessionId,
             'sender_id': senderId,
@@ -146,11 +135,9 @@ Future<void> main() async {
       continue;
     }
 
-
-    // ✅ Serve static uploaded files like profile images
+    // Serve static uploaded files
     if (request.uri.path.startsWith('/uploads/')) {
-      final file = File('.${request.uri.path}'); // maps to ./uploads/profile_images/6.jpg
-
+      final file = File('.${request.uri.path}');
       if (await file.exists()) {
         final ext = file.path.split('.').last.toLowerCase();
         if (ext == 'jpg' || ext == 'jpeg') {
@@ -163,7 +150,7 @@ Future<void> main() async {
 
         await request.response.addStream(file.openRead());
         await request.response.close();
-        continue; // ⬅️ Skip the rest of the routing
+        continue;
       } else {
         request.response
           ..statusCode = 404
@@ -172,7 +159,6 @@ Future<void> main() async {
         continue;
       }
     }
-
 
     try {
       if (path == '/auth/register' && request.method == 'POST') {
@@ -207,8 +193,7 @@ Future<void> main() async {
       } else if (path.startsWith('/api/users') ||
           path.startsWith('/api/sessions') ||
           path.startsWith('/api/chat') ||
-          path.startsWith('/api/ratings'))
-      {
+          path.startsWith('/api/ratings')) {
         final authHeader = request.headers.value('Authorization');
         print("🔍 Raw auth header: $authHeader");
 
@@ -234,11 +219,10 @@ Future<void> main() async {
           continue;
         }
 
-        final wasHandled = await chatRoutes.handleRequest(
-            request, userId)||await userRoutes.handleRequest(request, userId) ||
-            await sessionRoutes.handleRequest(request, userId) ||
-
-      await ratingRoutes.handleRequest(request, userId); // ✅ ADD CHAT ROUTES
+        final wasHandled = await chatRoutes.handleRequest(request, userId)
+            || await userRoutes.handleRequest(request, userId)
+            || await sessionRoutes.handleRequest(request, userId)
+            || await ratingRoutes.handleRequest(request, userId);
 
         if (!wasHandled) {
           request.response

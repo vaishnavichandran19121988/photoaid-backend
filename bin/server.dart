@@ -22,6 +22,7 @@ final Map<int, List<WebSocket>> sessionSockets = {};
 
 Future<void> main() async {
   print('🚀 Starting PhotoAid HTTP Server...');
+  debugEnvVars(); 
 
   try {
     await withDb((session) async {

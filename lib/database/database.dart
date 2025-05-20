@@ -1,33 +1,59 @@
 import 'dart:io';
 import 'package:postgres/postgres.dart';
 
-final String? databaseUrl = Platform.environment['DATABASE_URL'] ?? 
-  'postgresql://postgres:kBQSGGjSXqDVomrjlPBYwpzkdbiOMcZB@mainline.proxy.rlwy.net:25942/railway';
+final bool useConnectionPool =
+    (Platform.environment['USE_CONNECTION_POOL']?.toLowerCase() == 'true');
 
-final uri = Uri.parse(databaseUrl);
+Connection? _singletonConnection;
 
-final host = uri.host;                // mainline.proxy.rlwy.net
-final port = uri.port;                // 25942
-final database = uri.pathSegments.first; // railway
-final userInfo = uri.userInfo.split(':');
-final username = userInfo[0];         // postgres
-final password = userInfo[1];         // kBQSGGjSXqDVomrjlPBYwpzkdbiOMcZB
+final Pool<Connection>? _connectionPool = useConnectionPool
+    ? Pool<Connection>.withEndpoints(
+        [
+          Endpoint(
+            host: Platform.environment['DB_HOST']!,
+            port: int.parse(Platform.environment['DB_PORT']!),
+            database: Platform.environment['DB_NAME']!,
+            username: Platform.environment['DB_USER']!,
+            password: Platform.environment['DB_PASSWORD']!,
+          ),
+        ],
+        settings: const PoolSettings(
+          maxConnectionCount: 10,
+          sslMode: SslMode.require, // SSL enabled
+        ),
+      )
+    : null;
 
-final connection = PostgreSQLConnection(
-  host,
-  port,
-  database,
-  username: username,
-  password: password,
-  useSSL: true, // Set true if your Railway DB requires SSL
-);
+Future<Connection> _getSingletonConnection() async {
+  _singletonConnection ??= await Connection.open(
+    Endpoint(
+      host: Platform.environment['DB_HOST']!,
+      port: int.parse(Platform.environment['DB_PORT']!),
+      database: Platform.environment['DB_NAME']!,
+      username: Platform.environment['DB_USER']!,
+      password: Platform.environment['DB_PASSWORD']!,
+    ),
+    settings: const ConnectionSettings(
+      sslMode: SslMode.require, // SSL enabled
+    ),
+  );
+  return _singletonConnection!;
+}
 
-Future<void> main() async {
-  try {
-    await connection.open();
-    print('✅ Connected to DB!');
-    // Run your queries or start your server here
-  } catch (e) {
-    print('❌ Failed to connect to DB: $e');
+Future<T> withDb<T>(Future<T> Function(Session) fn) async {
+  if (useConnectionPool) {
+    return _connectionPool!.run(fn);
+  } else {
+    final conn = await _getSingletonConnection();
+    return fn(conn);
+  }
+}
+
+Future<void> closeDbConnections() async {
+  if (useConnectionPool && _connectionPool != null) {
+    await _connectionPool!.close();
+  } else if (_singletonConnection != null) {
+    await _singletonConnection!.close();
+    _singletonConnection = null;
   }
 }

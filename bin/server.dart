@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
+import 'package:postgres/postgres.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/services/auth_service.dart';
 import 'package:backend/utils/jwt_utils.dart';

@@ -1,5 +1,5 @@
 # Use specific Dart SDK version for consistency (optional)
-FROM dart:stable AS build
+FROM dart:3.7 AS build
 
 # Set working directory inside container
 WORKDIR /app

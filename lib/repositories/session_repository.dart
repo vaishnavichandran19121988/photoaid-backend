@@ -6,6 +6,7 @@ import 'package:backend/services/fcm_service.dart';
 import 'package:backend/repositories/user_repository.dart';
 import 'Package:backend/models/user.dart';
 
+
 class SessionRepository {
   static final SessionRepository _instance = SessionRepository._internal();
   factory SessionRepository() => _instance;
@@ -14,9 +15,9 @@ class SessionRepository {
   Future<Session?> findById(int id) async {
     try {
       return await withDb((session) async {
-        final results = await session.query(
-          'SELECT * FROM sessions WHERE id = @id',
-          substitutionValues: {'id': id},
+        final results = await session.execute(
+          pg.Sql.named('SELECT * FROM sessions WHERE id = @id'),
+          parameters: {'id': id},
         );
         return results.isEmpty
             ? null
@@ -28,15 +29,16 @@ class SessionRepository {
     }
   }
 
+
   Future<List<Session>> findByUserId(int userId) async {
     try {
       return await withDb((session) async {
-        final results = await session.query(
-          '''
+        final results = await session.execute(
+          pg.Sql.named('''
           SELECT * FROM sessions 
           WHERE tourist_id = @userId OR helper_id = @userId
-          ''',
-          substitutionValues: {'userId': userId},
+        '''),
+          parameters: {'userId': userId},
         );
         return results.map((r) => Session.fromJson(r.toColumnMap())).toList();
       });
@@ -46,12 +48,13 @@ class SessionRepository {
     }
   }
 
+
   Future<List<Session>> findByHelperId(int helperId) async {
     try {
       return await withDb((session) async {
-        final results = await session.query(
-          'SELECT * FROM sessions WHERE helper_id = @helperId',
-          substitutionValues: {'helperId': helperId},
+        final results = await session.execute(
+          pg.Sql.named('SELECT * FROM sessions WHERE helper_id = @helperId'),
+          parameters: {'helperId': helperId},
         );
         return results.map((r) => Session.fromJson(r.toColumnMap())).toList();
       });
@@ -60,6 +63,9 @@ class SessionRepository {
       return [];
     }
   }
+
+
+
 
   Future<Session?> createSession(Session s) async {
     try {
@@ -73,17 +79,17 @@ class SessionRepository {
 
         final now = DateTime.now();
         final status = s.status.toString().split('.').last;
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           INSERT INTO sessions (
             tourist_id, helper_id, status, meeting_point_lat, meeting_point_lng, 
             description, created_at, updated_at,navigation_mode
           ) VALUES (
             @touristId, @helperId, @status, @lat, @lng, 
-            @description, @createdAt, @updatedAt, @navigation_mode
+            @description, @createdAt, @updatedAt,@navigation_mode
           ) RETURNING *
-          ''',
-          substitutionValues: {
+          '''),
+          parameters: {
             'touristId': s.requesterId,
             'helperId': s.helperId,
             'status': status,
@@ -93,6 +99,7 @@ class SessionRepository {
             'createdAt': now,
             'updatedAt': now,
             'navigation_mode': s.navigationMode,
+
           },
         );
         return result.isEmpty
@@ -109,8 +116,8 @@ class SessionRepository {
     try {
       return await withDb((session) async {
         final now = DateTime.now();
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           UPDATE sessions SET
             tourist_id = @touristId,
             helper_id = @helperId,
@@ -123,8 +130,8 @@ class SessionRepository {
             navigation_mode = @navigation_mode
           WHERE id = @id
           RETURNING *
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'id': s.id,
             'touristId': s.requesterId,
             'helperId': s.helperId,
@@ -134,7 +141,7 @@ class SessionRepository {
             'description': s.description,
             'updatedAt': now,
             'completedAt': s.completedAt,
-            'navigation_mode': s.navigationMode,
+            'navigation_mode': s.navigationMode
           },
         );
 
@@ -154,12 +161,15 @@ class SessionRepository {
     }
   }
 
+
+
+
   Future<Session?> rejectSession(int sessionId, int helperId) async {
     try {
       return await withDb((session) async {
         final now = DateTime.now();
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           UPDATE sessions
           SET status = @status,
               updated_at = @updatedAt,
@@ -168,14 +178,14 @@ class SessionRepository {
             AND helper_id = @helperId 
             AND status = @pendingStatus
           RETURNING *
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'sessionId': sessionId,
             'helperId': helperId,
             'status': SessionStatus.cancelled.name,
             'pendingStatus': SessionStatus.pending.name,
             'updatedAt': now,
-            'completedAt': now,
+            'completedAt': now,   // ✅ Mark as ended
           },
         );
         return result.isEmpty ? null : Session.fromJson(result.first.toColumnMap());
@@ -191,17 +201,18 @@ class SessionRepository {
       print('🔧 Attempting to accept sessionId=$sessionId by helperId=$helperId');
 
       return await withDb((session) async {
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           UPDATE sessions
           SET helper_id = @helperId, 
               status = @status, 
               updated_at = @updatedAt
           WHERE id = @sessionId 
             AND status = @pendingStatus
+            
           RETURNING *
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'sessionId': sessionId,
             'helperId': helperId,
             'status': SessionStatus.accepted.name,
@@ -228,14 +239,14 @@ class SessionRepository {
     try {
       return await withDb((session) async {
         final now = DateTime.now();
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           UPDATE sessions
           SET status = @status, completed_at = @completedAt, updated_at = @updatedAt
           WHERE id = @sessionId AND status =  @acceptedStatus
           RETURNING *
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'sessionId': sessionId,
             'status': SessionStatus.completed.name,
             'acceptedStatus': SessionStatus.accepted.name,
@@ -255,8 +266,8 @@ class SessionRepository {
     try {
       return await withDb((session) async {
         final now = DateTime.now();
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           UPDATE sessions
           SET status = @status,
               updated_at = @updatedAt,
@@ -264,14 +275,14 @@ class SessionRepository {
           WHERE id = @sessionId
             AND status IN (@pending, @accepted)
           RETURNING *
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'sessionId': sessionId,
             'status': SessionStatus.cancelled.name,
             'pending': SessionStatus.pending.name,
             'accepted': SessionStatus.accepted.name,
             'updatedAt': now,
-            'completedAt': now,
+            'completedAt': now,   // ✅ Mark as ended
           },
         );
         return result.isEmpty ? null : Session.fromJson(result.first.toColumnMap());
@@ -282,18 +293,20 @@ class SessionRepository {
     }
   }
 
+
   Future<int> expireOldPendingSessions() async {
     try {
       return await withDb((session) async {
-        final result = await session.query(
-          '''
+        // 1. Fetch and expire sessions that are old
+        final result = await session.execute(
+          pg.Sql.named('''
           UPDATE sessions
           SET status = @status, updated_at = NOW()
           WHERE status = @pendingStatus 
             AND created_at <= NOW() - INTERVAL '120 seconds'
           RETURNING id, tourist_id
-          ''',
-          substitutionValues: {
+        '''), // 👈 We return id and user
+          parameters: {
             'status': SessionStatus.expired.name,
             'pendingStatus': SessionStatus.pending.name,
           },
@@ -304,6 +317,7 @@ class SessionRepository {
           return 0;
         }
 
+        // 2. Notify each tourist about the expiry
         for (final row in result) {
           final rowMap = row.toColumnMap();
           final userId = rowMap['tourist_id'] as int;
@@ -335,15 +349,18 @@ class SessionRepository {
     }
   }
 
+
+
+
   Future<List<Session>> findIncomingRequestsForHelper(int helperId) async {
     try {
       return await withDb((session) async {
-        final result = await session.query(
-          '''
+        final result = await session.execute(
+          pg.Sql.named('''
           SELECT * FROM sessions 
           WHERE helper_id = @helperId AND status = 'pending'
-          ''',
-          substitutionValues: {'helperId': helperId},
+        '''),
+          parameters: {'helperId': helperId},
         );
         return result.map((r) => Session.fromJson(r.toColumnMap())).toList();
       });
@@ -369,6 +386,7 @@ class SessionRepository {
 
   double _degToRad(double deg) => deg * (pi / 180);
 
+
   Future<List<Session>> findPastSessionsForUser(int userId) async {
     try {
       final pastStatuses = [
@@ -378,14 +396,14 @@ class SessionRepository {
       ];
 
       return await withDb((session) async {
-        final results = await session.query(
-          '''
+        final results = await session.execute(
+          pg.Sql.named('''
           SELECT * FROM sessions 
           WHERE (tourist_id = @userId OR helper_id = @userId)
           AND status = ANY(@statuses)
           ORDER BY updated_at DESC
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'userId': userId,
             'statuses': pastStatuses,
           },
@@ -399,22 +417,24 @@ class SessionRepository {
     }
   }
 
+
   Future<Session?> findByIdWithUsers(int sessionId) async {
     try {
       return await withDb((dbSession) async {
-        final results = await dbSession.query(
-          '''
-          SELECT s.*, 
-           h.id as h_id, h.username as h_username, h.full_name as h_full_name, h.profile_image_url as h_profile_image_url,
-           h.location_lat as h_lat, h.location_lng as h_lng,
-           r.id as r_id, r.username as r_username, r.full_name as r_full_name, r.profile_image_url as r_profile_image_url,
-           r.location_lat as r_lat, r.location_lng as r_lng
-          FROM sessions s
-          LEFT JOIN users h ON s.helper_id = h.id
-          LEFT JOIN users r ON s.tourist_id = r.id
-          WHERE s.id = @sessionId
-          ''',
-          substitutionValues: {'sessionId': sessionId},
+        final results = await dbSession.execute(
+          pg.Sql.named('''
+        SELECT s.*, 
+       h.id as h_id, h.username as h_username, h.full_name as h_full_name, h.profile_image_url as h_profile_image_url,
+       h.location_lat as h_lat, h.location_lng as h_lng,  -- ✅ Add this
+       r.id as r_id, r.username as r_username, r.full_name as r_full_name, r.profile_image_url as r_profile_image_url,
+       r.location_lat as r_lat, r.location_lng as r_lng   -- ✅ Add this
+
+        FROM sessions s
+        LEFT JOIN users h ON s.helper_id = h.id
+        LEFT JOIN users r ON s.tourist_id = r.id
+        WHERE s.id = @sessionId
+        '''),
+          parameters: {'sessionId': sessionId},
         );
 
         if (results.isEmpty) return null;
@@ -422,13 +442,14 @@ class SessionRepository {
         final row = results.first.toColumnMap();
         final sessionModel = Session.fromJson(row);
 
+        // Attach helper
         if (row['h_id'] != null) {
           sessionModel.helper = User(
             id: row['h_id'],
             username: row['h_username'],
             fullName: row['h_full_name'],
             profileImageUrl: row['h_profile_image_url'],
-            locationLat: (row['h_lat'] as num?)?.toDouble(),
+            locationLat: (row['h_lat'] as num?)?.toDouble(),     // ✅ New
             locationLng: (row['h_lng'] as num?)?.toDouble(),
             email: '',
             role: '',
@@ -438,13 +459,14 @@ class SessionRepository {
           );
         }
 
+        // Attach requester
         if (row['r_id'] != null) {
           sessionModel.requester = User(
             id: row['r_id'],
             username: row['r_username'],
             fullName: row['r_full_name'],
             profileImageUrl: row['r_profile_image_url'],
-            locationLat: (row['r_lat'] as num?)?.toDouble(),
+            locationLat: (row['r_lat'] as num?)?.toDouble(),     // ✅ New
             locationLng: (row['r_lng'] as num?)?.toDouble(),
             email: '',
             role: '',
@@ -471,13 +493,13 @@ class SessionRepository {
       ];
 
       return await withDb((session) async {
-        final results = await session.query(
-          '''
+        final results = await session.execute(
+          pg.Sql.named('''
           SELECT * FROM sessions 
           WHERE (tourist_id = @userId OR helper_id = @userId)
           AND status = ANY(@statuses)
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'userId': userId,
             'statuses': activeStatuses,
           },
@@ -499,13 +521,13 @@ class SessionRepository {
       ];
 
       return await withDb((session) async {
-        final results = await session.query(
-          '''
+        final results = await session.execute(
+          pg.Sql.named('''
           SELECT * FROM sessions 
           WHERE helper_id = @helperId
           AND status = ANY(@statuses)
-          ''',
-          substitutionValues: {
+        '''),
+          parameters: {
             'helperId': helperId,
             'statuses': activeStatuses,
           },
@@ -518,4 +540,6 @@ class SessionRepository {
       return [];
     }
   }
+
+
 }

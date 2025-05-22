@@ -1,31 +1,31 @@
-# Use specific Dart SDK version for consistency (optional)
 FROM dart:3.7 AS build
 
-# Set working directory inside container
 WORKDIR /app
 
-# Copy only pubspec files and get dependencies first (to leverage Docker cache)
 COPY pubspec.yaml pubspec.lock ./
-RUN dart pub get --verbose
 
-# Copy all source files
+# Capture pub get output to build_pub_get.log
+RUN dart pub get --verbose > build_pub_get.log 2>&1
+
 COPY . .
 
-# Show Dart version and source files to debug
-RUN dart --version
-RUN ls -l /app/bin
+# Capture Dart version and bin folder listing
+RUN dart --version > build_dart_version.log 2>&1
+RUN ls -l /app/bin > build_bin_listing.log 2>&1
 
-# Compile the server executable
-RUN dart compile exe bin/server.dart -o bin/server
+# Compile server, log output
+RUN dart compile exe bin/server.dart -o bin/server > build_compile.log 2>&1
 
-# Final image: use smaller base for running only the compiled binary
+# Expose logs as artifacts (optional)
+RUN mkdir /app/build_logs && \
+    cp build_pub_get.log build_dart_version.log build_bin_listing.log build_compile.log /app/build_logs/
+
 FROM scratch
 
-# Copy the compiled server binary from build stage
 COPY --from=build /app/bin/server /bin/server
+COPY --from=build /app/build_logs /build_logs
 
-# Expose any ports if necessary (e.g., 8080)
 EXPOSE 8080
 
-# Run the server binary
+# Run the server, and ensure stdout/stderr go to Docker logs
 CMD ["/bin/server"]

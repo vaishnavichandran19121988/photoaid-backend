@@ -5,8 +5,7 @@ WORKDIR /app
 # Copy pubspec files first for caching
 COPY pubspec.yaml pubspec.lock ./
 
-# Run pub upgrade to upgrade dependencies
-RUN dart pub upgrade
+
 
 # Then get dependencies based on upgraded versions
 RUN dart pub get --verbose

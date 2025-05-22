@@ -3,10 +3,7 @@ import 'dart:io';
 import 'package:backend/services/auth_service.dart';
 import 'package:backend/utils/jwt_utils.dart';
 
-/*
- * Handles profile updates: name, bio, email, and image (base64 or single file field).
- * Simplified: works without MimeMultipartTransformer or external packages.
- */
+
 Future<void> handleUpdateProfile(HttpRequest request) async {
   final authHeader = request.headers.value('authorization');
   if (authHeader == null || !authHeader.startsWith('Bearer ')) {
@@ -34,32 +31,14 @@ Future<void> handleUpdateProfile(HttpRequest request) async {
     final fullName = data['full_name'] as String?;
     final bio = data['bio'] as String?;
     final email = data['email'] as String?;
-    String? imagePath;
-
-    // ✅ Handle base64 image upload (optional)
-    if (data['profile_image_base64'] != null) {
-      final base64Image = data['profile_image_base64'];
-      final bytes = base64Decode(base64Image);
-      final uploadDir = Directory('uploads/profile_images');
-      if (!await uploadDir.exists()) await uploadDir.create(recursive: true);
-
-      final relativePath = 'uploads/profile_images/$userId.jpg';
-      final file = File(relativePath);
-      await file.writeAsBytes(bytes);
-
-// 🔥 Replace this with your real backend IP/port if not using localhost
-
-      final baseUrl = 'http://192.168.1.23:8080';
-      imagePath = '$baseUrl/$relativePath'; // ✅ This is stored in DB and sent to frontend
-
-    }
+    final profileImageUrl = data['profile_image_url'] as String?;
 
     final result = await AuthService().updateProfile(
       userId: userId,
       fullName: fullName,
       bio: bio,
       email: email,
-      profileImageUrl: imagePath,
+      profileImageUrl: profileImageUrl, // use URL from upload step
     );
 
     request.response

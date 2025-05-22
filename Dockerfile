@@ -1,22 +1,23 @@
-FROM dart:3.7 AS build
+FROM dart:stable AS build
 
 WORKDIR /app
 
+# Copy pubspec files first for caching
 COPY pubspec.yaml pubspec.lock ./
 
-# Run pub get with verbose output printed to stdout/stderr
+# Run pub upgrade to upgrade dependencies
+RUN dart pub upgrade
+
+# Then get dependencies based on upgraded versions
 RUN dart pub get --verbose
 
+# Copy rest of source files
 COPY . .
 
-# Show Dart version and files in bin for debug info
-RUN dart --version
-RUN ls -l /app/bin
-
-# Compile the server, print output to stdout/stderr
+# Compile your server executable (if needed)
 RUN dart compile exe bin/server.dart -o bin/server
 
-# Final stage: minimal image with compiled binary
+# Final image for runtime
 FROM scratch
 
 COPY --from=build /app/bin/server /bin/server

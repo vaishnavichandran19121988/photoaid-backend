@@ -7,6 +7,8 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/models/user.dart';
 import 'package:postgres/postgres.dart' as pg;
+import 'package:shelf_multipart/multipart.dart'; // ✅ provides MultipartFormTransformer
+
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -101,6 +103,51 @@ class AuthService {
       };
     }
   }
+  Future<Map<String, dynamic>> updateProfile({
+    required int userId,
+    String? fullName,
+    String? email,
+    String? bio,
+    String? profileImageUrl,
+  }) async {
+    try {
+      final success = await UserRepository().updateUserProfile(
+        userId: userId,
+        fullName: fullName,
+        email: email,
+        bio: bio,
+        profileImageUrl: profileImageUrl,
+      );
+
+      if (!success) {
+        return {
+          'success': false,
+          'message': 'Failed to update user profile',
+        };
+      }
+
+      final updatedUser = await UserRepository().getUserById(userId);
+      if (updatedUser == null) {
+        return {
+          'success': false,
+          'message': 'User not found after update',
+        };
+      }
+
+      return {
+        'success': true,
+        'message': 'Profile updated successfully',
+        'user': updatedUser.toJson(),
+      };
+    } catch (e) {
+      print('❌ Error in updateProfile: $e');
+      return {
+        'success': false,
+        'message': 'Server error: ${e.toString()}',
+      };
+    }
+  }
+
 
   // ✅ LOGIN
   Future<Map<String, dynamic>> login({
@@ -286,48 +333,7 @@ class AuthService {
  * Supports changes to full name, profile image, bio, and email.
  * Returns a success message and the updated user object if completed.
  */
-  Future<Map<String, dynamic>> updateProfile({
-    required int userId,
-    String? fullName,
-    String? profileImageUrl,
-    String? bio,
-    String? email, // ✅ New field added
-  }) async {
-    try {
-      // Call the repository function to update user profile in the database
-      final success = await UserRepository().updateUserProfile(
-        userId: userId,
-        fullName: fullName,
-        profileImageUrl: profileImageUrl,
-        bio: bio,
-        email: email, // ✅ Forward email to repository
-      );
 
-      if (!success) {
-        // If update failed (e.g. duplicate email), return error
-        return {
-          'success': false,
-          'message': 'Profile update failed',
-        };
-      }
-
-      // Fetch the latest version of the updated user
-      final updatedUser = await UserRepository().getUserById(userId);
-
-      return {
-        'success': true,
-        'message': 'Profile updated successfully',
-        'user': updatedUser?.toJson(),
-      };
-    } catch (e) {
-      // Handle unexpected server or database errors
-      print('[AuthService] ❌ Error updating profile: $e');
-      return {
-        'success': false,
-        'message': 'Internal server error',
-      };
-    }
-  }
 
   Future<Map<String, dynamic>> getUserProfile(int userId) async {
     try {

@@ -42,7 +42,7 @@ Future<void> handleUploadProfileImage(HttpRequest request) async {
 
     final imageBytes = base64Decode(imageBase64);
     String userIdStr = userId.toString();
-    final imageUrl = await uploadProfileImageToGCS(imageBytes, userId);
+    final imageUrl = await uploadProfileImageToGCS(imageBytes, userIdStr);
 
 
 

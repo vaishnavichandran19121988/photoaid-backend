@@ -17,6 +17,8 @@ dependencies:
   shelf_router: ^1.1.4
   web_socket_channel: ^2.3.0
   http: ^1.2.1
+  googleapis: ^13.1.0
+  googleapis_auth: ^1.4.1
 
 dev_dependencies:
   test: ^1.24.0

@@ -166,6 +166,8 @@ class SessionService {
 
       // ✅ NEW: Reload session with full user objects
       final fullSession = await _sessionRepo.findByIdWithUsers(sessionId);
+      print('[SessionService] 🔍 Loaded session navigationMode: ${session.navigationMode}');
+
 
       return {
         'success': true,
@@ -395,6 +397,20 @@ class SessionService {
     final sessions = await _sessionRepo.findPastSessionsForUser(userId);
     return sessions.where((s) => s.helperId == userId).toList();
   }
+  Future<Session?> updateSession(Session updatedSession) async {
+    try {
+      final result = await _sessionRepo.updateSession(updatedSession);
+      if (result == null) {
+        print('[SessionService] ❌ Failed to update session in repository');
+        return null;
+      }
+      print('[SessionService] ✅ Session updated successfully: ID=${result.id}');
+      return result;
+    } catch (e) {
+      print('[SessionService] ❌ Error in updateSession: $e');
+      return null;
+    }
+  }
 
   Future<Session?> findByIdWithUsers(int sessionId) async {
     print('[SessionService] 🔍 findByIdWithUsers called for sessionId=$sessionId');
@@ -412,6 +428,8 @@ class SessionService {
           'Helper: ${session.helper?.username}');
       print('[SessionService] 📍 Meeting Point: '
           'Lat=${session.locationLat}, Lng=${session.locationLng}');
+      print('[SessionService] 🔍 Loaded session navigationMode: ${session.navigationMode}');
+
 
 
       return session;
@@ -425,7 +443,3 @@ class SessionService {
 
 
 }
-
-
-
-

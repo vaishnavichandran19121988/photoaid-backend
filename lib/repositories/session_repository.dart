@@ -83,10 +83,10 @@ class SessionRepository {
           pg.Sql.named('''
           INSERT INTO sessions (
             tourist_id, helper_id, status, meeting_point_lat, meeting_point_lng, 
-            description, created_at, updated_at
+            description, created_at, updated_at,navigation_mode
           ) VALUES (
             @touristId, @helperId, @status, @lat, @lng, 
-            @description, @createdAt, @updatedAt
+            @description, @createdAt, @updatedAt,@navigation_mode
           ) RETURNING *
           '''),
           parameters: {
@@ -98,6 +98,7 @@ class SessionRepository {
             'description': s.description,
             'createdAt': now,
             'updatedAt': now,
+            'navigation_mode': s.navigationMode,
 
           },
         );
@@ -125,7 +126,8 @@ class SessionRepository {
             meeting_point_lng = @lng,
             description = @description,
             updated_at = @updatedAt,
-            completed_at = @completedAt
+            completed_at = @completedAt,
+            navigation_mode = @navigation_mode
           WHERE id = @id
           RETURNING *
         '''),
@@ -133,24 +135,32 @@ class SessionRepository {
             'id': s.id,
             'touristId': s.requesterId,
             'helperId': s.helperId,
-            'status': s.status.name,                     // ✅ cleaner syntax
+            'status': s.status.name,
             'lat': s.locationLat,
             'lng': s.locationLng,
             'description': s.description,
             'updatedAt': now,
-            'completedAt': s.completedAt,               // ✅ add this field
+            'completedAt': s.completedAt,
+            'navigation_mode': s.navigationMode
           },
         );
 
-        return result.isEmpty
-            ? null
-            : Session.fromJson(result.first.toColumnMap());
+        if (result.isEmpty) {
+          print('❌ No session updated for ID: ${s.id}');
+          return null;
+        }
+
+        final updatedRow = result.first.toColumnMap();
+        print('[SessionService] Updated session ID=${s.id} with navigation_mode=${updatedRow['navigation_mode']}');
+
+        return Session.fromJson(updatedRow);
       });
     } catch (e) {
       print('❌ Error updating session: $e');
       return null;
     }
   }
+
 
 
 
@@ -287,27 +297,58 @@ class SessionRepository {
   Future<int> expireOldPendingSessions() async {
     try {
       return await withDb((session) async {
+        // 1. Fetch and expire sessions that are old
         final result = await session.execute(
           pg.Sql.named('''
           UPDATE sessions
           SET status = @status, updated_at = NOW()
           WHERE status = @pendingStatus 
             AND created_at <= NOW() - INTERVAL '120 seconds'
-        '''),
+          RETURNING id, tourist_id
+        '''), // 👈 We return id and user
           parameters: {
             'status': SessionStatus.expired.name,
             'pendingStatus': SessionStatus.pending.name,
           },
         );
 
-        print('🕑 Expired ${result.affectedRows} old pending sessions');
-        return result.affectedRows;   // ✅ returns number of sessions expired
+        if (result.isEmpty) {
+          print('🟡 No sessions to expire.');
+          return 0;
+        }
+
+        // 2. Notify each tourist about the expiry
+        for (final row in result) {
+          final rowMap = row.toColumnMap();
+          final userId = rowMap['tourist_id'] as int;
+
+          final user = await UserRepository().getUserById(userId);
+          final token = user?.fcmToken;
+
+          if (token != null && token.isNotEmpty) {
+            await FcmService.sendPush(
+              fcmToken: token,
+              title: "⏰ Session Expired",
+              body: "No helper accepted your session request in time.",
+              data: {
+                'type': 'session_expired',
+                'sessionId': rowMap['id'].toString(),
+              },
+            );
+          } else {
+            print('⚠️ No FCM token for user $userId');
+          }
+        }
+
+        print('✅ Expired ${result.length} sessions and notified users');
+        return result.length;
       });
     } catch (e) {
       print('❌ Error expiring old sessions: $e');
       return 0;
     }
   }
+
 
 
 

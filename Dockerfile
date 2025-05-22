@@ -2,7 +2,7 @@ FROM dart:stable AS build
 
 WORKDIR /app
 
-RUN dart pub cache clear
+RUN dart pub cache clean
 
 
 COPY pubspec.yaml pubspec.lock ./

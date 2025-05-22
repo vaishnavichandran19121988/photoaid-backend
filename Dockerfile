@@ -20,4 +20,4 @@ COPY --from=build /app/bin/server /bin/server
 
 EXPOSE 8080
 
-CMD ["./bin/server"]
+CMD ["/bin/server"]

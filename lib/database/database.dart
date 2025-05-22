@@ -1,10 +1,8 @@
-import 'package:dotenv/dotenv.dart';
+import 'dart:io';
 import 'package:postgres/postgres.dart';
 
-final _env = DotEnv()..load();
-
 final bool useConnectionPool =
-    _env['USE_CONNECTION_POOL']?.toLowerCase() == 'true';
+    (Platform.environment['USE_CONNECTION_POOL']?.toLowerCase() == 'true');
 
 Connection? _singletonConnection;
 
@@ -13,33 +11,33 @@ Connection? _singletonConnection;
 
 final Pool<Connection>? _connectionPool = useConnectionPool
     ? Pool<Connection>.withEndpoints(
-  [
-    Endpoint(
-      host: _env['DB_HOST']!,
-      port: int.parse(_env['DB_PORT']!),
-      database: _env['DB_NAME']!,
-      username: _env['DB_USER']!,
-      password: _env['DB_PASSWORD']!,
-    ),
-  ],
-  settings: const PoolSettings(
-    maxConnectionCount: 10,
-    sslMode: SslMode.disable,
-  ),
-)
+        [
+          Endpoint(
+            host: Platform.environment['DB_HOST']!,
+            port: int.parse(Platform.environment['DB_PORT']!),
+            database: Platform.environment['DB_NAME']!,
+            username: Platform.environment['DB_USER']!,
+            password: Platform.environment['DB_PASSWORD']!,
+          ),
+        ],
+        settings: const PoolSettings(
+          maxConnectionCount: 10,
+          sslMode: SslMode.require, // SSL enabled
+        ),
+      )
     : null;
 
 Future<Connection> _getSingletonConnection() async {
   _singletonConnection ??= await Connection.open(
     Endpoint(
-      host: _env['DB_HOST']!,
-      port: int.parse(_env['DB_PORT']!),
-      database: _env['DB_NAME']!,
-      username: _env['DB_USER']!,
-      password: _env['DB_PASSWORD']!,
+      host: Platform.environment['DB_HOST']!,
+      port: int.parse(Platform.environment['DB_PORT']!),
+      database: Platform.environment['DB_NAME']!,
+      username: Platform.environment['DB_USER']!,
+      password: Platform.environment['DB_PASSWORD']!,
     ),
     settings: const ConnectionSettings(
-      sslMode: SslMode.disable,
+      sslMode: SslMode.require, // SSL enabled
     ),
   );
   return _singletonConnection!;

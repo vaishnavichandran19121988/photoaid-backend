@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:backend/utils/jwt_utils.dart';
+import 'package:backend/services/gcs_service.dart';
 
 
 
@@ -40,16 +41,7 @@ Future<void> handleUploadProfileImage(HttpRequest request) async {
     }
 
     final imageBytes = base64Decode(imageBase64);
-    final filePath = 'uploads/profile_images/$userId.jpg';
-
-    final uploadDir = Directory('uploads/profile_images');
-if (!await uploadDir.exists()) {
-  await uploadDir.create(recursive: true);
-}
-    final file = File(filePath);
-    await file.writeAsBytes(imageBytes);
-
- final imageUrl = 'https://fulfilling-creation-production.up.railway.app/$filePath';
+    final imageUrl = await uploadProfileImageToGCS(imageBytes, userId);
 
 
 

@@ -1,18 +1,31 @@
-# Use Dart's official image
-FROM dart:stable
+# Use specific Dart SDK version for consistency (optional)
+FROM dart:stable AS build
 
-# Set working directory
+# Set working directory inside container
 WORKDIR /app
 
-# Copy pubspec and get dependencies first (cache-friendly)
-COPY pubspec.* ./
-RUN dart pub get
+# Copy only pubspec files and get dependencies first (to leverage Docker cache)
+COPY pubspec.yaml pubspec.lock ./
+RUN dart pub get --verbose
 
-# Copy the rest of the code
+# Copy all source files
 COPY . .
 
-# Compile the server (optional but good practice)
+# Show Dart version and source files to debug
+RUN dart --version
+RUN ls -l /app/bin
+
+# Compile the server executable
 RUN dart compile exe bin/server.dart -o bin/server
 
-# Run the compiled server
-CMD ["./bin/server"]
+# Final image: use smaller base for running only the compiled binary
+FROM scratch
+
+# Copy the compiled server binary from build stage
+COPY --from=build /app/bin/server /bin/server
+
+# Expose any ports if necessary (e.g., 8080)
+EXPOSE 8080
+
+# Run the server binary
+CMD ["/bin/server"]

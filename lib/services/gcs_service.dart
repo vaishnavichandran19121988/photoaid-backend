@@ -6,7 +6,11 @@ import 'package:googleapis/storage/v1.dart' as gcs;
 
 Future<String> uploadProfileImageToGCS(Uint8List imageBytes, String userId) async {
   print('[GCS] Starting upload for user: $userId');
-  final credentialsJson = Platform.environment['GOOGLE_APPLICATION_CREDENTIALS_JSON'];
+  try {
+  final credentials = ServiceAccountCredentials.fromJson(credentialsJson);
+} catch (e) {
+  print('[GCS] ERROR: Failed to parse credentials JSON: $e');
+}
   if (credentialsJson == null) {
     print('[GCS] ERROR: GOOGLE_APPLICATION_CREDENTIALS_JSON not set');
     throw Exception('GOOGLE_APPLICATION_CREDENTIALS_JSON not set');

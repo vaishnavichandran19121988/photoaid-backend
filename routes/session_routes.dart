@@ -51,7 +51,10 @@ class SessionRoutes {
       await handleCancelSession(request, userId);
       return true;
     }
-
+    if (RegExp(r'^/api/sessions/\d+/set_mode/?$').hasMatch(path) && method == 'POST') {
+      await handleSetNavigationMode(request, userId);
+      return true;
+    }
 
 
     if (path == '/api/sessions/active/tourist' && method == 'GET') {

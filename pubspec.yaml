@@ -19,6 +19,8 @@ dependencies:
   http_server: ^1.0.0
   mime: ^1.0.0
   shelf_multipart: ^1.0.0
+  postgres_pool: ^1.2.3
+  dotenv: ^5.0.0
 
 
 

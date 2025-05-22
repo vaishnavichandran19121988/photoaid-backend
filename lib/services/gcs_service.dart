@@ -23,6 +23,8 @@ Future<String> uploadProfileImageToGCS(Uint8List imageBytes, String userId) asyn
 
   final scopes = [gcs.StorageApi.devstorageFullControlScope];
   final client = await clientViaServiceAccount(credentials, scopes);
+  final storage = gcs.StorageApi(client);
+
   print('[GCS] Authenticated client created');
 
   final bucket = Platform.environment['GCS_BUCKET'];

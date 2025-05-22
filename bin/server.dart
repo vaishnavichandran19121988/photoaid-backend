@@ -5,18 +5,18 @@ import 'package:backend/database/database.dart';
 import 'package:backend/services/auth_service.dart';
 import 'package:backend/utils/jwt_utils.dart';
 import '../routes/rating_routes.dart';
-import 'package:backend/services/chat_service.dart';
-import 'package:backend/repositories/chat_repository.dart';
-import 'package:backend/repositories/session_repository.dart';
-import 'package:backend/repositories/user_repository.dart';
-import 'package:backend/database/migrations.dart';
+import 'package:backend/services/chat_service.dart'; // ✅ NEW
+import 'package:backend/repositories/chat_repository.dart'; // ✅ NEW
+import 'package:backend/repositories/session_repository.dart'; // ✅ NEW
+import 'package:backend/repositories/user_repository.dart'; // ✅ NEW
+
 import '../routes/user_routes.dart';
 import '../routes/session_routes.dart';
-import '../routes/chat_routes.dart';
+import '../routes/chat_routes.dart'; // ✅ NEW
 
 final userRoutes = UserRoutes();
 final sessionRoutes = SessionRoutes();
-final chatRoutes = ChatRoutes();
+final chatRoutes = ChatRoutes(); // ✅ NEW
 final ratingRoutes = RatingRoutes();
 final Map<int, List<WebSocket>> sessionSockets = {};
 
@@ -25,8 +25,8 @@ Future<void> main() async {
 
   try {
     await withDb((session) async {
-      await runMigrations(session);
-      print('✅ Database connected and migrations complete.');
+      final result = await session.execute('SELECT 1');
+      print('✅ Database connected: $result');
     });
   } catch (e) {
     print('❌ Failed to connect to DB: $e');
@@ -52,7 +52,6 @@ Future<void> main() async {
       await request.response.close();
       continue;
     }
-
     if (path.startsWith('/ws/chat/')) {
       final sessionIdStr = path.split('/').last;
       final sessionId = int.tryParse(sessionIdStr);
@@ -84,6 +83,7 @@ Future<void> main() async {
             return;
           }
 
+          // ✅ Save message in DB
           final chatService = ChatService(
             ChatRepository(),
             SessionRepository(),
@@ -102,6 +102,7 @@ Future<void> main() async {
             return;
           }
 
+          // ✅ Build and broadcast message to all sockets in the session
           final messageJson = jsonEncode({
             'session_id': sessionId,
             'sender_id': senderId,
@@ -135,9 +136,11 @@ Future<void> main() async {
       continue;
     }
 
-    // Serve static uploaded files
+
+    // ✅ Serve static uploaded files like profile images
     if (request.uri.path.startsWith('/uploads/')) {
-      final file = File('.${request.uri.path}');
+      final file = File('.${request.uri.path}'); // maps to ./uploads/profile_images/6.jpg
+
       if (await file.exists()) {
         final ext = file.path.split('.').last.toLowerCase();
         if (ext == 'jpg' || ext == 'jpeg') {
@@ -150,7 +153,7 @@ Future<void> main() async {
 
         await request.response.addStream(file.openRead());
         await request.response.close();
-        continue;
+        continue; // ⬅️ Skip the rest of the routing
       } else {
         request.response
           ..statusCode = 404
@@ -159,6 +162,7 @@ Future<void> main() async {
         continue;
       }
     }
+
 
     try {
       if (path == '/auth/register' && request.method == 'POST') {
@@ -193,7 +197,8 @@ Future<void> main() async {
       } else if (path.startsWith('/api/users') ||
           path.startsWith('/api/sessions') ||
           path.startsWith('/api/chat') ||
-          path.startsWith('/api/ratings')) {
+          path.startsWith('/api/ratings'))
+      {
         final authHeader = request.headers.value('Authorization');
         print("🔍 Raw auth header: $authHeader");
 
@@ -219,10 +224,11 @@ Future<void> main() async {
           continue;
         }
 
-        final wasHandled = await chatRoutes.handleRequest(request, userId)
-            || await userRoutes.handleRequest(request, userId)
-            || await sessionRoutes.handleRequest(request, userId)
-            || await ratingRoutes.handleRequest(request, userId);
+        final wasHandled = await chatRoutes.handleRequest(
+            request, userId)||await userRoutes.handleRequest(request, userId) ||
+            await sessionRoutes.handleRequest(request, userId) ||
+
+      await ratingRoutes.handleRequest(request, userId); // ✅ ADD CHAT ROUTES
 
         if (!wasHandled) {
           request.response
@@ -240,15 +246,20 @@ Future<void> main() async {
       }
     } catch (e, st) {
       print('❌ Server Error: $e\n$st');
-      request.response
-        ..statusCode = 500
-        ..headers.contentType = ContentType.json
-        ..write(jsonEncode({
-          'success': false,
-          'message': 'Internal server error',
-          'error': e.toString()
-        }))
-        ..close();
+
+      try {
+        request.response
+          ..statusCode = 500
+          ..headers.contentType = ContentType.json
+          ..write(jsonEncode({
+            'success': false,
+            'message': 'Internal server error',
+            'error': e.toString()
+          }))
+          ..close();
+      } catch (_) {
+        print('⚠️ Response already closed — skipping second write.');
+      }
     }
   }
 }

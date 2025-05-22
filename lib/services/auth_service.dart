@@ -7,7 +7,6 @@ import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
 import 'package:backend/database/database.dart';
 import 'package:backend/models/user.dart';
 import 'package:postgres/postgres.dart' as pg;
-import 'package:shelf_multipart/multipart.dart'; // ✅ provides MultipartFormTransformer
 
 
 class AuthService {

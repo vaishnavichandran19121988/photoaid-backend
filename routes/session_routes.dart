@@ -4,7 +4,7 @@ import 'session/get_session_by_id.dart';
 import 'session/get_full_session_by_id.dart';
 import 'session/create_session.dart';
 import 'session/accept_session.dart';
-
+import 'session/session_set_mode.dart';
 import 'session/cancel_session.dart';
 import 'session/complete_session.dart';
 import 'session/incoming_requests.dart';

@@ -14,7 +14,7 @@ RUN dart pub get --verbose
 COPY . .
 
 # Compile your server executable (if needed)
-RUN dart compile exe bin/server.dart -o bin/server
+CMD ["dart", "run", "bin/server.dart"]
 
 # Final image for runtime
 FROM scratch

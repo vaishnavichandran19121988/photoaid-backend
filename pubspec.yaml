@@ -12,7 +12,10 @@ dependencies:
   dotenv: ^4.1.0
   latlong2: ^0.9.0
   pointycastle: ^3.9.1
-  postgres_pool: ^1.2.3   # Add this for connection pooling and 'execute' API
+  postgres_pool: ^1.2.3
   shelf: ^1.4.1
   shelf_router: ^1.1.4
   web_socket_channel: ^2.3.0
+
+dev_dependencies:
+  test: ^1.24.0

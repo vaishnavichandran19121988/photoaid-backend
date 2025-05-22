@@ -15,10 +15,9 @@ RUN dart pub deps
 RUN find . -type f
 RUN cat bin/server.dart | head -20
 RUN dart compile exe bin/server.dart -o bin/server
+RUN chmod +x bin/server
 
 FROM scratch
-
-WORKDIR /app
 
 COPY --from=build /app/bin/server /bin/server
 

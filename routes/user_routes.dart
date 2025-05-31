@@ -65,6 +65,7 @@ class UserRoutes {
     }
     if (path == '/api/users/upload_profile_image' && method == 'POST') {
       await handleUploadProfileImage(request);
+       return true;
     }
     return false;
   }

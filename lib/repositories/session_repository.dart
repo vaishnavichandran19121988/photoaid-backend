@@ -416,6 +416,11 @@ class SessionRepository {
       return [];
     }
   }
+Future<int> countSessions() async {
+  return await connection.querySingleValue<int>(
+    'SELECT COUNT(*) FROM sessions'
+  ) ?? 0;
+}
 
 
   Future<Session?> findByIdWithUsers(int sessionId) async {

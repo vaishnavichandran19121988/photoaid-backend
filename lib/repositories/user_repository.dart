@@ -381,4 +381,85 @@ class UserRepository {
       rethrow;
     }
   }
+  // ✅ NEW: Count total users
+  Future<int> countUsers() async {
+    print('[UserRepository] 🔢 Counting total users...');
+    return await withDb((pg.Session session) async {
+      final result = await session.execute('SELECT COUNT(*) FROM users');
+      final count = result.first[0] as int;
+      print('[UserRepository] ✅ Total users count: $count');
+      return count;
+    });
+  }
+
+  // ✅ NEW: Get recent users (limit N)
+  Future<List<User>> getRecentUsers(int limit) async {
+    print('[UserRepository] 🔍 Fetching recent $limit users...');
+    return await withDb((pg.Session session) async {
+      final result = await session.execute(
+        pg.Sql.named('''
+          SELECT * FROM users
+          ORDER BY created_at DESC
+          LIMIT @limit
+        '''),
+        parameters: {
+          'limit': limit,
+        },
+      );
+
+      final users = result.map((row) => User.fromDatabaseRow(row.toColumnMap())).toList();
+      print('[UserRepository] ✅ Retrieved ${users.length} recent users');
+      return users;
+    });
+  }
+
+  // ✅ NEW: Delete user by ID
+  Future<bool> deleteUser(int userId) async {
+    print('[UserRepository] 🗑 Deleting user ID=$userId...');
+    return await withDb((pg.Session session) async {
+      final result = await session.execute(
+        pg.Sql.named('DELETE FROM users WHERE id = @id'),
+        parameters: {
+          'id': userId,
+        },
+      );
+
+      final affectedRows = result.affectedRows ?? 0;
+      print('[UserRepository] Delete result: affectedRows=$affectedRows');
+      return affectedRows > 0;
+    });
+  }
+
+  // ✅ NEW: Update user details by Admin
+  Future<bool> updateUserByAdmin({
+    required int userId,
+    String? fullName,
+    String? email,
+    String? bio,
+  }) async {
+    print('[UserRepository] ✏ Updating user ID=$userId...');
+    return await withDb((pg.Session session) async {
+      final result = await session.execute(
+        pg.Sql.named('''
+          UPDATE users
+          SET 
+            full_name = COALESCE(@full_name, full_name),
+            email = COALESCE(@email, email),
+            bio = COALESCE(@bio, bio),
+            updated_at = NOW()
+          WHERE id = @id
+        '''),
+        parameters: {
+          'id': userId,
+          'full_name': fullName,
+          'email': email,
+          'bio': bio,
+        },
+      );
+
+      final affectedRows = result.affectedRows ?? 0;
+      print('[UserRepository] Update result: affectedRows=$affectedRows');
+      return affectedRows > 0;
+    });
+  }
 }

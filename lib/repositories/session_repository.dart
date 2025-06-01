@@ -4,7 +4,7 @@ import 'package:backend/database/database.dart';
 import 'package:backend/models/session.dart';
 import 'package:backend/services/fcm_service.dart';
 import 'package:backend/repositories/user_repository.dart';
-import 'Package:backend/models/user.dart';
+import 'package:backend/models/user.dart';
 
 
 class SessionRepository {

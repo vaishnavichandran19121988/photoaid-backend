@@ -51,4 +51,4 @@ class JwtUtils {
     return token;
   }
 }
-}
+

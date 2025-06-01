@@ -417,10 +417,12 @@ class SessionRepository {
     }
   }
 Future<int> countSessions() async {
+  final connection = await Database.getConnection();
   return await connection.querySingleValue<int>(
     'SELECT COUNT(*) FROM sessions'
   ) ?? 0;
 }
+
 
 
   Future<Session?> findByIdWithUsers(int sessionId) async {

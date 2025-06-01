@@ -417,11 +417,15 @@ class SessionRepository {
     }
   }
 Future<int> countSessions() async {
-  final connection = await Database.getConnection();
-  return await connection.querySingleValue<int>(
-    'SELECT COUNT(*) FROM sessions'
-  ) ?? 0;
+  return await withDb((session) async {
+    final result = await session.execute(
+      pg.Sql.named('SELECT COUNT(*) AS count FROM sessions'),
+    );
+    final row = result.first.toColumnMap();
+    return row['count'] as int? ?? 0;
+  });
 }
+
 
 
 

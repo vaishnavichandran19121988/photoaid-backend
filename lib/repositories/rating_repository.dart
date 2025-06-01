@@ -308,4 +308,10 @@ class RatingRepository {
     }
   }
 
+  Future<int> countRatings() async {
+  return await connection.querySingleValue<int>(
+    'SELECT COUNT(*) FROM ratings'
+  ) ?? 0;
+}
+
 }

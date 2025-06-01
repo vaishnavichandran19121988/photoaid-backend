@@ -169,6 +169,10 @@ Future<void> main() async {
         await _handleRegister(request);
       } else if (path == '/auth/login' && request.method == 'POST') {
         await _handleLogin(request);
+        // ✅ ADD HERE:
+  else if (path == '/auth/admin_login' && request.method == 'POST') {
+    await _handleAdminLogin(request);
+  }
       } else if (path == '/auth/verify') {
         final authHeader = request.headers.value('Authorization');
         print('🧪 /auth/verify header: $authHeader');
@@ -311,6 +315,47 @@ Future<void> _handleLogin(HttpRequest request) async {
         ..close();
       return;
     }
+
+    Future<void> _handleAdminLogin(HttpRequest request) async {
+  try {
+    final body = await utf8.decoder.bind(request).join();
+    final data = jsonDecode(body) as Map<String, dynamic>;
+
+    final usernameOrEmail = data['usernameOrEmail'];
+    final password = data['password'];
+
+    if (usernameOrEmail == null || password == null) {
+      print('[AdminAuth] ⚠️ Missing usernameOrEmail or password');
+      request.response
+        ..statusCode = 400
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode({
+          'success': false,
+          'message': 'Missing required fields: usernameOrEmail and/or password',
+        }))
+        ..close();
+      return;
+    }
+
+    final result = await AuthService().adminLogin(
+      usernameOrEmail: usernameOrEmail,
+      password: password,
+    );
+
+    request.response
+      ..statusCode = result['success'] == true ? 200 : 401
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode(result))
+      ..close();
+  } catch (e) {
+    print('Error in /auth/admin_login: $e');
+    request.response
+      ..statusCode = 500
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'success': false, 'message': 'Server error'}))
+      ..close();
+  }
+}
 
     final result = await AuthService().login(
       usernameOrEmail: usernameOrEmail,

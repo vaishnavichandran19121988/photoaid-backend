@@ -209,7 +209,7 @@ Future<void> main() async {
 
  
 
-  final wasHandled = await adminRoutes.handleRequest(requestContext);
+  final wasHandled = await adminRoutes.handleRequest(request, rawBody);
 if (!wasHandled) {
   request.response
     ..statusCode = 404

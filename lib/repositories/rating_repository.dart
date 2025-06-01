@@ -308,10 +308,15 @@ class RatingRepository {
     }
   }
 
-  Future<int> countRatings() async {
-  return await connection.querySingleValue<int>(
-    'SELECT COUNT(*) FROM ratings'
-  ) ?? 0;
+ Future<int> countRatings() async {
+  return await withDb((session) async {
+    final result = await session.execute(
+      pg.Sql.named('SELECT COUNT(*) AS count FROM ratings'),
+    );
+    final row = result.first.toColumnMap();
+    return row['count'] as int? ?? 0;
+  });
 }
+
 
 }

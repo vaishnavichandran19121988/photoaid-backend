@@ -2,6 +2,8 @@ import 'package:backend/repositories/user_repository.dart';
 import 'package:backend/repositories/session_repository.dart';
 import 'package:backend/repositories/rating_repository.dart';
 import 'package:backend/models/user.dart';
+import 'package:backend/database/database.dart';
+
 
 class AdminService {
   final _userRepo = UserRepository();

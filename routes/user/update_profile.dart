@@ -27,11 +27,21 @@ Future<void> handleUpdateProfile(HttpRequest request) async {
   try {
     final body = await utf8.decoder.bind(request).join();
     final data = jsonDecode(body);
+     // ✅ ADDING DEBUG LOGS HERE
+    print('[Backend] Raw incoming request body: $body');
+    print('[Backend] Parsed data: $data');
 
     final fullName = data['full_name'] as String?;
     final bio = data['bio'] as String?;
     final email = data['email'] as String?;
     final profileImageUrl = data['profile_image_url'] as String?;
+        // ✅ MORE FIELD LEVEL DEBUG
+    print('[Backend] Extracted fields:');
+    print('  full_name: $fullName');
+    print('  email: $email');
+    print('  bio: $bio');
+    print('  profile_image_url: $profileImageUrl');
+
 
     final result = await AuthService().updateProfile(
       userId: userId,

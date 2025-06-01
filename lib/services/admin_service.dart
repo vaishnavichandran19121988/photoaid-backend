@@ -63,4 +63,18 @@ class AdminService {
     print(success ? '[AdminService] ✅ [UPDATE RESULT] User updated successfully' : '[AdminService] ❌ [UPDATE RESULT] Failed to update user');
     return success;
   }
+
+  Future<int> countRatings() async {
+  try {
+    return await withDb((session) async {
+      final result = await session.execute('SELECT COUNT(*) AS count FROM ratings');
+      final row = result.first.toColumnMap();
+      return row['count'] as int;
+    });
+  } catch (e) {
+    print('Error counting ratings: $e');
+    return 0;
+  }
+}
+
 }

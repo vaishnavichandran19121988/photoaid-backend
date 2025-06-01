@@ -203,21 +203,19 @@ Future<void> main() async {
           ..close();
       }
       
-      else if (path.startsWith('/admin')) {
+     else if (path.startsWith('/admin')) {
   final authHeader = request.headers.value('Authorization');
   final rawBody = await utf8.decoder.bind(request).join();
 
- 
-
-  final wasHandled = await adminRoutes.handleRequest(request, rawBody);
-if (!wasHandled) {
-  request.response
-    ..statusCode = 404
-    ..headers.contentType = ContentType.json
-    ..write(jsonEncode({'error': 'Route not handled'}))
-    ..close();
+  final wasHandled = await adminRoutes.handleRequest(request);  // <-- FIXED LINE
+  if (!wasHandled) {
+    request.response
+      ..statusCode = 404
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'error': 'Route not handled'}))
+      ..close();
+  }
 }
-      }
       
       else if (path.startsWith('/api/users') ||
           path.startsWith('/api/sessions') ||

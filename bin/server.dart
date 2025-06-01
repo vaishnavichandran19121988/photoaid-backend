@@ -9,11 +9,14 @@ import 'package:backend/services/chat_service.dart'; // ✅ NEW
 import 'package:backend/repositories/chat_repository.dart'; // ✅ NEW
 import 'package:backend/repositories/session_repository.dart'; // ✅ NEW
 import 'package:backend/repositories/user_repository.dart'; // ✅ NEW
+import '../routes/admin_routes.dart';
+
 
 import '../routes/user_routes.dart';
 import '../routes/session_routes.dart';
 import '../routes/chat_routes.dart'; // ✅ NEW
 
+final adminRoutes = AdminRoutes();
 final userRoutes = UserRoutes();
 final sessionRoutes = SessionRoutes();
 final chatRoutes = ChatRoutes(); // ✅ NEW
@@ -198,7 +201,28 @@ Future<void> main() async {
           ..headers.contentType = ContentType.json
           ..write(jsonEncode(result))
           ..close();
-      } else if (path.startsWith('/api/users') ||
+      }
+      
+      else if (path.startsWith('/admin')) {
+  final authHeader = request.headers.value('Authorization');
+  final rawBody = await utf8.decoder.bind(request).join();
+
+  final requestContext = RequestContext(
+    request: request,
+    rawBody: rawBody,
+  );
+
+  final response = await adminRoutes.handleRequest(requestContext);
+
+  request.response
+    ..statusCode = response.statusCode
+    ..headers.contentType = ContentType.json
+    ..write(response.body);
+
+  await request.response.close();
+}
+      
+      else if (path.startsWith('/api/users') ||
           path.startsWith('/api/sessions') ||
           path.startsWith('/api/chat') ||
           path.startsWith('/api/ratings'))

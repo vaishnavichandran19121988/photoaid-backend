@@ -380,7 +380,8 @@ class AuthService {
       final userData = result.first.toColumnMap();
       final storedHash = userData['password_hash'] as String;
       final salt = userData['salt'] as String;
-      final inputHash = _hashPassword(password, salt);
+     final inputHash = _hashAdminPassword(password, salt);
+
 
       if (inputHash != storedHash) {
         return {'success': false, 'message': 'Invalid password'};
@@ -406,6 +407,12 @@ class AuthService {
     return {'success': false, 'message': 'Login failed: ${e.toString()}'};
   }
 }
-
+String _hashAdminPassword(String password, String salt) {
+  final key = utf8.encode(password);
+  final saltBytes = base64Decode(salt);
+  final hmac = Hmac(sha256, key);
+  final digest = hmac.convert(saltBytes);
+  return digest.toString();
+}
 
 }

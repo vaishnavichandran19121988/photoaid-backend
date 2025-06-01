@@ -380,7 +380,13 @@ class AuthService {
       final userData = result.first.toColumnMap();
       final storedHash = userData['password_hash'] as String;
       final salt = userData['salt'] as String;
-     final inputHash = _hashAdminPassword(password, salt);
+      print('[AdminLogin] 🔐 Stored salt from DB: $salt');
+      print('[AdminLogin] 🔐 Stored hash from DB: $storedHash');
+
+      final inputHash = _hashAdminPassword(password, salt);
+
+      print('[AdminLogin] 🔐 Input password: $password');
+      print('[AdminLogin] 🔐 Calculated inputHash: $inputHash');
 
 
       if (inputHash != storedHash) {

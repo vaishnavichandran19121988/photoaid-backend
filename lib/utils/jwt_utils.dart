@@ -37,4 +37,18 @@ class JwtUtils {
       return null;
     }
   }
+
+  // 🔥 NEW method to generate token
+  static String generateToken(Map<String, dynamic> payload) {
+    final header = {'alg': 'HS256', 'typ': 'JWT'};
+    final base64Header =
+        base64Url.encode(utf8.encode(jsonEncode(header))).replaceAll('=', '');
+    final base64Payload =
+        base64Url.encode(utf8.encode(jsonEncode(payload))).replaceAll('=', '');
+
+    // NOTE: No signing — this is just for demo (same as you're doing currently)
+    final token = '$base64Header.$base64Payload.signature';
+    return token;
+  }
+}
 }

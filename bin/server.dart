@@ -212,14 +212,13 @@ Future<void> main() async {
     rawBody: rawBody,
   );
 
-  final response = await adminRoutes.handleRequest(requestContext);
-
+  final wasHandled = await adminRoutes.handleRequest(requestContext);
+if (!wasHandled) {
   request.response
-    ..statusCode = response.statusCode
+    ..statusCode = 404
     ..headers.contentType = ContentType.json
-    ..write(response.body);
-
-  await request.response.close();
+    ..write(jsonEncode({'error': 'Route not handled'}))
+    ..close();
 }
       
       else if (path.startsWith('/api/users') ||

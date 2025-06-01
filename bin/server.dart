@@ -207,10 +207,7 @@ Future<void> main() async {
   final authHeader = request.headers.value('Authorization');
   final rawBody = await utf8.decoder.bind(request).join();
 
-  final requestContext = RequestContext(
-    request: request,
-    rawBody: rawBody,
-  );
+ 
 
   final wasHandled = await adminRoutes.handleRequest(requestContext);
 if (!wasHandled) {
@@ -220,6 +217,7 @@ if (!wasHandled) {
     ..write(jsonEncode({'error': 'Route not handled'}))
     ..close();
 }
+      }
       
       else if (path.startsWith('/api/users') ||
           path.startsWith('/api/sessions') ||

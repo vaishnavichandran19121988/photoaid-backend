@@ -20,7 +20,7 @@ final chatRoutes = ChatRoutes(); // ✅ NEW
 final ratingRoutes = RatingRoutes();
 final Map<int, List<WebSocket>> sessionSockets = {};
 
-Future<void> main() async {
+Future<void> main() async {  
   print('🚀 Starting PhotoAid HTTP Server...');
 
   try {
@@ -169,11 +169,11 @@ Future<void> main() async {
         await _handleRegister(request);
       } else if (path == '/auth/login' && request.method == 'POST') {
         await _handleLogin(request);
-        // ✅ ADD HERE:
-  else if (path == '/auth/admin_login' && request.method == 'POST') {
-    await _handleAdminLogin(request);
-  }
-      } else if (path == '/auth/verify') {
+       
+      } 
+       else if (path == '/auth/admin_login' && request.method == 'POST') {
+   await _handleAdminLogin(request);
+}else if (path == '/auth/verify') {
         final authHeader = request.headers.value('Authorization');
         print('🧪 /auth/verify header: $authHeader');
 
@@ -316,7 +316,28 @@ Future<void> _handleLogin(HttpRequest request) async {
       return;
     }
 
-    Future<void> _handleAdminLogin(HttpRequest request) async {
+  
+
+    final result = await AuthService().login(
+      usernameOrEmail: usernameOrEmail,
+      password: password,
+    );
+
+    request.response
+      ..statusCode = result['success'] == true ? 200 : 401
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode(result))
+      ..close();
+  } catch (e) {
+    print('Error in /auth/login: $e');
+    request.response
+      ..statusCode = 500
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'success': false, 'message': 'Server error'}))
+      ..close();
+  }
+}
+Future<void> _handleAdminLogin(HttpRequest request) async {
   try {
     final body = await utf8.decoder.bind(request).join();
     final data = jsonDecode(body) as Map<String, dynamic>;
@@ -357,22 +378,3 @@ Future<void> _handleLogin(HttpRequest request) async {
   }
 }
 
-    final result = await AuthService().login(
-      usernameOrEmail: usernameOrEmail,
-      password: password,
-    );
-
-    request.response
-      ..statusCode = result['success'] == true ? 200 : 401
-      ..headers.contentType = ContentType.json
-      ..write(jsonEncode(result))
-      ..close();
-  } catch (e) {
-    print('Error in /auth/login: $e');
-    request.response
-      ..statusCode = 500
-      ..headers.contentType = ContentType.json
-      ..write(jsonEncode({'success': false, 'message': 'Server error'}))
-      ..close();
-  }
-}

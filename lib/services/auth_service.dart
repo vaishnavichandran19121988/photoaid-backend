@@ -357,5 +357,55 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> adminLogin({
+  required String usernameOrEmail,
+  required String password,
+}) async {
+  try {
+    return await withDb((pg.Session session) async {
+      final result = await session.execute(
+        pg.Sql.named('''
+          SELECT * FROM users
+          WHERE username = @username_or_email OR email = @username_or_email
+        '''),
+        parameters: {
+          'username_or_email': usernameOrEmail,
+        },
+      );
+
+      if (result.isEmpty) {
+        return {'success': false, 'message': 'User not found'};
+      }
+
+      final userData = result.first.toColumnMap();
+      final storedHash = userData['password_hash'] as String;
+      final salt = userData['salt'] as String;
+      final inputHash = _hashPassword(password, salt);
+
+      if (inputHash != storedHash) {
+        return {'success': false, 'message': 'Invalid password'};
+      }
+
+      final role = userData['role'] as String;
+      if (role != 'admin') {
+        return {'success': false, 'message': 'Only admin users allowed'};
+      }
+
+      final user = User.fromDatabaseRow(userData);
+      final token = _generateToken(user.id);
+
+      return {
+        'success': true,
+        'message': 'Admin login successful',
+        'user': user.toJson(),
+        'token': token,
+      };
+    });
+  } catch (e) {
+    print('[AdminLogin] Exception: $e');
+    return {'success': false, 'message': 'Login failed: ${e.toString()}'};
+  }
+}
+
 
 }

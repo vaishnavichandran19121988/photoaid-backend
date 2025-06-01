@@ -407,7 +407,9 @@ class AuthService {
     return {'success': false, 'message': 'Login failed: ${e.toString()}'};
   }
 }
-String _hashAdminPassword(String password, String salt) {
+
+
+  String _hashAdminPassword(String password, String salt) {
   final key = utf8.encode(password);
   final saltBytes = base64Decode(salt);
   final hmac = Hmac(sha256, key);
@@ -416,3 +418,4 @@ String _hashAdminPassword(String password, String salt) {
 }
 
 }
+

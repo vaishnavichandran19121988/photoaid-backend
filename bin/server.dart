@@ -387,6 +387,17 @@ Future<void> _handleAdminLogin(HttpRequest request) async {
       password: password,
     );
 
+     if (result['success'] == true) {
+      final adminUser = result['user'];  // assuming your result has user object
+      final token = JwtUtils.generateToken({
+        'userId': adminUser['id'],
+        'role': 'admin', // 🔥 Inject role only for admin
+      });
+
+      result['token'] = token;  // overwrite or add token with role
+    }
+
+
     request.response
       ..statusCode = result['success'] == true ? 200 : 401
       ..headers.contentType = ContentType.json

@@ -386,23 +386,23 @@ Future<void> _handleAdminLogin(HttpRequest request) async {
       password: password,
     );
 
-     if (result['success'] == true) {
-      final adminUser = result['user'];  // assuming your result has user object
-     final token = JwtUtils.generateToken({
+    if (result['success'] == true) {
+      final adminUser = result['user'];
+      final token = JwtUtils.generateToken({
         'userId': adminUser['id'],
         'role': 'admin',
       });
 
-      result['token'] = token;  // overwrite or add token with role
+      result['token'] = token;
     }
-
 
     request.response
       ..statusCode = result['success'] == true ? 200 : 401
       ..headers.contentType = ContentType.json
       ..write(jsonEncode(result))
       ..close();
-  } catch (e) {
+
+  } catch (e) {  // ✅ e and request are both accessible
     print('Error in /auth/admin_login: $e');
     request.response
       ..statusCode = 500

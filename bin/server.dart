@@ -207,7 +207,7 @@ Future<void> main() async {
   final authHeader = request.headers.value('Authorization');
   final rawBody = await utf8.decoder.bind(request).join();
 
-  final wasHandled = await adminRoutes.handleRequest(request);  // <-- FIXED LINE
+  final wasHandled = await adminRoutes.handleRequest(request, rawBody: rawBody); // <-- FIXED LINE
   if (!wasHandled) {
     request.response
       ..statusCode = 404

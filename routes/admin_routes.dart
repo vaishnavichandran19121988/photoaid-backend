@@ -55,7 +55,8 @@ class AdminRoutes {
           return true;
         }
         if (method == 'PUT') {
-  final body = await utf8.decoder.bind(request).join();
+ final body = await request.transform(utf8.decoder).join();
+
   await _handleUpdateUser(userIdParam, body, request.response);
   return true;
 }

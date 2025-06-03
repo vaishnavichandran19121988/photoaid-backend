@@ -102,25 +102,26 @@ class AdminRoutes {
     await request.response.close();
   }
 
-  Future<void> _handleUpdateUser(HttpRequest request, int userId, String body) async {
-    final data = jsonDecode(body) as Map<String, dynamic>;
-    final fullName = data['fullName'] as String?;
-    final email = data['email'] as String?;
-    final bio = data['bio'] as String?;
+Future<void> _handleUpdateUser(int userId, String body, HttpResponse response) async {
+  final data = jsonDecode(body) as Map<String, dynamic>;
+  final fullName = data['fullName'] as String?;
+  final email = data['email'] as String?;
+  final bio = data['bio'] as String?;
 
-    final success = await _adminService.updateUserDetails(
-      userId: userId,
-      fullName: fullName,
-      email: email,
-      bio: bio,
-    );
+  final success = await _adminService.updateUserDetails(
+    userId: userId,
+    fullName: fullName,
+    email: email,
+    bio: bio,
+  );
 
-    request.response
-      ..statusCode = 200
-      ..headers.contentType = ContentType.json
-      ..write(jsonEncode({'success': success}));
-    await request.response.close();
-  }
+  response
+    ..statusCode = 200
+    ..headers.contentType = ContentType.json
+    ..write(jsonEncode({'success': success}));
+  await response.close();
+}
+
 
   // Helpers
   Future<void> _unauthorized(HttpRequest request) async {

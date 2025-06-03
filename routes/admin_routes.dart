@@ -6,7 +6,8 @@ import 'package:backend/utils/jwt_utils.dart';
 class AdminRoutes {
   final _adminService = AdminService();
 
-  Future<bool> handleRequest(HttpRequest request) async {
+  Future<bool> handleRequest(HttpRequest request, {String? rawBody}) async {
+
     final path = request.uri.path;
     final method = request.method;
     final query = request.uri.queryParameters;
@@ -55,8 +56,16 @@ class AdminRoutes {
           return true;
         }
         if (method == 'PUT') {
-  final body = await request.cast<List<int>>().transform(utf8.decoder).join();
-  await _handleUpdateUser(userIdParam, body, request.response);
+  if (rawBody == null) {
+    request.response
+      ..statusCode = 400
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'error': 'Missing request body'}));
+    await request.response.close();
+    return true;
+  }
+
+  await _handleUpdateUser(userIdParam, rawBody, request.response);
   return true;
 }
 

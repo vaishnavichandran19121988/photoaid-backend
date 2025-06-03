@@ -392,26 +392,27 @@ class UserRepository {
     });
   }
 
-  // ✅ NEW: Get recent users (limit N)
-  Future<List<User>> getRecentUsers(int limit) async {
-    print('[UserRepository] 🔍 Fetching recent $limit users...');
-    return await withDb((pg.Session session) async {
-      final result = await session.execute(
-        pg.Sql.named('''
-          SELECT * FROM users
-          ORDER BY created_at DESC
-          LIMIT @limit
-        '''),
-        parameters: {
-          'limit': limit,
-        },
-      );
+ Future<List<User>> getRecentUsers(int limit) async {
+  print('[UserRepository] 🔍 Fetching recent $limit users (excluding admins)...');
+  return await withDb((pg.Session session) async {
+    final result = await session.execute(
+      pg.Sql.named('''
+        SELECT * FROM users
+        WHERE role != 'admin'
+        ORDER BY created_at DESC
+        LIMIT @limit
+      '''),
+      parameters: {
+        'limit': limit,
+      },
+    );
 
-      final users = result.map((row) => User.fromDatabaseRow(row.toColumnMap())).toList();
-      print('[UserRepository] ✅ Retrieved ${users.length} recent users');
-      return users;
-    });
-  }
+    final users = result.map((row) => User.fromDatabaseRow(row.toColumnMap())).toList();
+    print('[UserRepository] ✅ Retrieved ${users.length} recent non-admin users');
+    return users;
+  });
+}
+
 
   // ✅ NEW: Delete user by ID
   Future<bool> deleteUser(int userId) async {

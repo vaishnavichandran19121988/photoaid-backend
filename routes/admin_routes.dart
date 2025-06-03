@@ -55,11 +55,11 @@ class AdminRoutes {
           return true;
         }
         if (method == 'PUT') {
- final body = await request.transform(utf8.decoder).join();
-
+  final body = await request.cast<List<int>>().transform(utf8.decoder).join();
   await _handleUpdateUser(userIdParam, body, request.response);
   return true;
 }
+
 
       }
 

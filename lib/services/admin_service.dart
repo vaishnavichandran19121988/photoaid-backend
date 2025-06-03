@@ -37,13 +37,47 @@ class AdminService {
     return users;
   }
 
-  // ✅ Delete user
-  Future<bool> deleteUser(int userId) async {
-    print('[AdminService] 🗑 [DELETE] Requested delete for User ID=$userId');
-    final success = await _userRepo.deleteUser(userId);
-    print(success ? '[AdminService] ✅ [DELETE RESULT] User deleted successfully' : '[AdminService] ❌ [DELETE RESULT] Failed to delete user');
-    return success;
+ Future<bool> deleteUser(int userId) async {
+  print('[AdminService] 🗑 [DELETE] Requested delete for User ID=$userId');
+  try {
+    return await withDb((session) async {
+      await session.execute('BEGIN');  // Transaction start
+
+      // Delete dependent sessions
+      await session.execute(
+        pg.Sql.named('DELETE FROM sessions WHERE tourist_id = @id OR helper_id = @id'),
+        parameters: {'id': userId},
+      );
+
+      // Delete dependent ratings
+      await session.execute(
+        pg.Sql.named('DELETE FROM ratings WHERE user_id = @id OR helper_id = @id'),
+        parameters: {'id': userId},
+      );
+
+      // Delete dependent chat messages
+      await session.execute(
+        pg.Sql.named('DELETE FROM chat WHERE sender_id = @id OR receiver_id = @id'),
+        parameters: {'id': userId},
+      );
+
+      // Finally delete user
+      final result = await session.execute(
+        pg.Sql.named('DELETE FROM users WHERE id = @id'),
+        parameters: {'id': userId},
+      );
+
+      await session.execute('COMMIT');
+      final affectedRows = result.affectedRows ?? 0;
+      print('[AdminService] ✅ User deleted successfully');
+      return affectedRows > 0;
+    });
+  } catch (e) {
+    print('[AdminService] ❌ Delete failed: $e');
+    return false;
   }
+}
+
 
   // ✅ Update user details (admin override)
   Future<bool> updateUserDetails({

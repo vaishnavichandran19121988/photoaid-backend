@@ -53,13 +53,13 @@ class AdminService {
 
       // Delete dependent ratings
       await session.execute(
-        pg.Sql.named('DELETE FROM ratings WHERE user_id = @id OR helper_id = @id'),
+        pg.Sql.named('DELETE FROM ratings WHERE rater_id = @id OR rated_id = @id'),
         parameters: {'id': userId},
       );
 
       // Delete dependent chat messages
       await session.execute(
-        pg.Sql.named('DELETE FROM chat WHERE sender_id = @id OR receiver_id = @id'),
+        pg.Sql.named('DELETE FROM chat_messages WHERE sender_id = @id OR receiver_id = @id'),
         parameters: {'id': userId},
       );
 

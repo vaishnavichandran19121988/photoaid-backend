@@ -39,31 +39,31 @@ class AdminService {
     return users;
   }
 
- Future<bool> deleteUser(int userId) async {
+Future<bool> deleteUser(int userId) async {
   print('[AdminService] 🗑 [DELETE] Requested delete for User ID=$userId');
   try {
     return await withDb((session) async {
       await session.execute('BEGIN');  // Transaction start
 
-      // Delete dependent sessions
+      // 1️⃣ Delete dependent ratings first (because they reference sessions)
+      await session.execute(
+        pg.Sql.named('DELETE FROM ratings WHERE rater_id = @id OR rated_id = @id OR session_id IN (SELECT id FROM sessions WHERE tourist_id = @id OR helper_id = @id)'),
+        parameters: {'id': userId},
+      );
+
+      // 2️⃣ Delete dependent sessions
       await session.execute(
         pg.Sql.named('DELETE FROM sessions WHERE tourist_id = @id OR helper_id = @id'),
         parameters: {'id': userId},
       );
 
-      // Delete dependent ratings
-      await session.execute(
-        pg.Sql.named('DELETE FROM ratings WHERE rater_id = @id OR rated_id = @id'),
-        parameters: {'id': userId},
-      );
-
-      // Delete dependent chat messages
+      // 3️⃣ Delete dependent chat messages
       await session.execute(
         pg.Sql.named('DELETE FROM chat_messages WHERE sender_id = @id OR receiver_id = @id'),
         parameters: {'id': userId},
       );
 
-      // Finally delete user
+      // 4️⃣ Finally delete user
       final result = await session.execute(
         pg.Sql.named('DELETE FROM users WHERE id = @id'),
         parameters: {'id': userId},

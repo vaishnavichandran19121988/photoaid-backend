@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'chat/send_chat_message.dart';
 import 'chat/get_chat_messages.dart';
+import 'chat/report_abuse.dart';
 
 class ChatRoutes {
   Future<bool> handleRequest(HttpRequest request, int userId) async {
@@ -15,7 +16,10 @@ class ChatRoutes {
       await handleSendChatMessage(request, userId);
       return true;
     }
-
+     if (path == '/api/chat/report_abuse' && method == 'POST') {
+      await handleReportAbuse(request, userId);
+      return true;
+    }
 
     // 📨 Send a new chat message
     if (RegExp(r'^/api/chat/messages/\d+/send$').hasMatch(path) &&

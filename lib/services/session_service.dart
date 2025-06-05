@@ -303,6 +303,21 @@ class SessionService {
       print(stack);
       return {'success': false, 'message': 'Error cancelling session: $e'};
     }
+    // ✅ Notify tourist after cancellation
+final tourist = await _userRepo.getUserById(session.requesterId);
+if (tourist != null && tourist.fcmToken != null) {
+  await FcmService.sendPush(
+    fcmToken: tourist.fcmToken!,
+    title: 'Request Declined',
+    body: 'Unfortunately, your request was declined by the helper.',
+    data: {
+      'type': 'session_update',
+      'session_id': session.id.toString(),
+      'status': 'cancelled',
+    },
+  );
+}
+
   }
 
   /// ✅ Get session by sessionId

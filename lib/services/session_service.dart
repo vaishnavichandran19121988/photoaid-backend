@@ -256,69 +256,70 @@ class SessionService {
 
 
   Future<Map<String, dynamic>> cancelSession(int sessionId, int userId) async {
-    try {
-      print('[SessionService] 🛑 cancelSession started for session $sessionId');
+  try {
+    print('[SessionService] 🛑 cancelSession started for session $sessionId');
 
-      final session = await _sessionRepo.cancelSession(sessionId);
-      if (session == null) {
-        return {'success': false, 'message': 'Session cannot be cancelled'};
-      }
-
-      await _logRepo.logStatusChange(
-        sessionId: sessionId,
-        status: SessionStatus.cancelled,
-        changedByUserId: userId,
-      );
-
-      // ✅ Notify helper if available
-      if (session.helperId != null) {
-        final helper = await _userRepo.getUserById(session.helperId!);
-        print('[SessionService] Helper FCM token: ${helper?.fcmToken}');
-        if (helper?.fcmToken != null) {
-          await FcmService.sendPush(
-            fcmToken: helper!.fcmToken!,
-            title: '🚫 Session Cancelled',
-            body: 'Tourist cancelled the session.',
-            data: {
-              'type': 'session_update',
-              'session_id': session.id.toString(),
-              'status': 'cancelled',
-            },
-          );
-        } else {
-          print('[SessionService] ⚠️ No fcmToken found for helper ${session.helperId}');
-        }
-      } else {
-        print('[SessionService] ⚠️ helperId is null in session ${session.id}');
-      }
-
-      return {
-        'success': true,
-        'message': 'Session cancelled',
-        'session': session.toJson(),
-      };
-
-    } catch (e, stack) {
-      print('[SessionService] ❌ Exception in cancelSession: $e');
-      print(stack);
-      return {'success': false, 'message': 'Error cancelling session: $e'};
+    final session = await _sessionRepo.cancelSession(sessionId);
+    if (session == null) {
+      return {'success': false, 'message': 'Session cannot be cancelled'};
     }
+
+    await _logRepo.logStatusChange(
+      sessionId: sessionId,
+      status: SessionStatus.cancelled,
+      changedByUserId: userId,
+    );
+
+    // ✅ Notify helper if available
+    if (session.helperId != null) {
+      final helper = await _userRepo.getUserById(session.helperId!);
+      print('[SessionService] Helper FCM token: ${helper?.fcmToken}');
+      if (helper?.fcmToken != null) {
+        await FcmService.sendPush(
+          fcmToken: helper!.fcmToken!,
+          title: '🚫 Session Cancelled',
+          body: 'Tourist cancelled the session.',
+          data: {
+            'type': 'session_update',
+            'session_id': session.id.toString(),
+            'status': 'cancelled',
+          },
+        );
+      } else {
+        print('[SessionService] ⚠️ No fcmToken found for helper ${session.helperId}');
+      }
+    } else {
+      print('[SessionService] ⚠️ helperId is null in session ${session.id}');
+    }
+
     // ✅ Notify tourist after cancellation
-final tourist = await _userRepo.getUserById(session.requesterId);
-if (tourist != null && tourist.fcmToken != null) {
-  await FcmService.sendPush(
-    fcmToken: tourist.fcmToken!,
-    title: 'Request Declined',
-    body: 'Unfortunately, your request was declined by the helper.',
-    data: {
-      'type': 'session_update',
-      'session_id': session.id.toString(),
-      'status': 'cancelled',
-    },
-  );
+    final tourist = await _userRepo.getUserById(session.requesterId);
+    if (tourist != null && tourist.fcmToken != null) {
+      await FcmService.sendPush(
+        fcmToken: tourist.fcmToken!,
+        title: 'Request Declined',
+        body: 'Unfortunately, your request was declined by the helper.',
+        data: {
+          'type': 'session_update',
+          'session_id': session.id.toString(),
+          'status': 'cancelled',
+        },
+      );
+    }
+
+    return {
+      'success': true,
+      'message': 'Session cancelled',
+      'session': session.toJson(),
+    };
+
+  } catch (e, stack) {
+    print('[SessionService] ❌ Exception in cancelSession: $e');
+    print(stack);
+    return {'success': false, 'message': 'Error cancelling session: $e'};
+  }
 }
 
-  }
 
   /// ✅ Get session by sessionId
   Future<Map<String, dynamic>> getSessionById(int sessionId) async {

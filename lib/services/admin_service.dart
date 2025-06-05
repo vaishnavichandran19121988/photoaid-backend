@@ -139,11 +139,11 @@ Future<Map<String, dynamic>> registerAdmin({
       };
     }
 
-    // Password hashing logic - reuse your existing helper functions if you have them
-    final salt = _generateSalt();
-    final hashedPassword = _hashPassword(password, salt);
+    // Use centralized utils now
+    final salt = PasswordUtils.generateSalt();
+    final hashedPassword = PasswordUtils.hashPassword(password, salt);
 
-    // Call our new insertAdmin() from repository layer
+    // Insert admin using repository layer
     final newAdmin = await _userRepo.insertAdmin(
       username: username,
       email: email,

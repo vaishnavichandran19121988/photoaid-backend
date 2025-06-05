@@ -253,4 +253,50 @@ class ChatRepository {
       };
     }
   }
+  Future<int> insertAbuseReport({
+    required int reporterId,
+    required int reportedUserId,
+    required int sessionId,
+    required String reason,
+  }) async {
+    try {
+      print('🟠 [ChatRepository] insertAbuseReport called...');
+      print('   - reporterId: $reporterId');
+      print('   - reportedUserId: $reportedUserId');
+      print('   - sessionId: $sessionId');
+      print('   - reason: $reason');
+
+      return await withDb((session) async {
+        print('🟠 [ChatRepository] Acquired DB session');
+
+        final result = await session.execute(
+          pg.Sql.named('''
+            INSERT INTO abuse_reports (
+              reporter_id, reported_user_id, session_id, reason, created_at
+            ) VALUES (
+              @reporterId, @reportedUserId, @sessionId, @reason, NOW()
+            ) RETURNING id
+          '''),
+          parameters: {
+            'reporterId': reporterId,
+            'reportedUserId': reportedUserId,
+            'sessionId': sessionId,
+            'reason': reason,
+          },
+        );
+
+        if (result.isEmpty) {
+          print('❌ [ChatRepository] No rows returned after abuse report insert');
+          throw Exception('Failed to insert abuse report');
+        }
+
+        final insertedId = result.first.toColumnMap()['id'] as int;
+        print('✅ [ChatRepository] Abuse report inserted successfully with ID: $insertedId');
+        return insertedId;
+      });
+    } catch (e, st) {
+      print('❌ [ChatRepository] Error inserting abuse report: $e\n$st');
+      rethrow;
+    }
+  }
 }

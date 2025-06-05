@@ -114,5 +114,62 @@ Future<bool> deleteUser(int userId) async {
     return 0;
   }
 }
+// ✅ New: Register Admin User
+Future<Map<String, dynamic>> registerAdmin({
+  required String username,
+  required String email,
+  required String password,
+  String? fullName,
+}) async {
+  try {
+    // Business rule: only allow email ending with photoaid.com
+    if (!email.endsWith('@photoaid.com')) {
+      return {
+        'success': false,
+        'message': 'Only emails ending with @photoaid.com allowed for admin registration',
+      };
+    }
+
+    // Check if already exists
+    final existing = await _userRepo.findByEmailOrUsername(email, username);
+    if (existing != null) {
+      return {
+        'success': false,
+        'message': 'Username or email already exists',
+      };
+    }
+
+    // Password hashing logic - reuse your existing helper functions if you have them
+    final salt = _generateSalt();
+    final hashedPassword = _hashPassword(password, salt);
+
+    // Call our new insertAdmin() from repository layer
+    final newAdmin = await _userRepo.insertAdmin(
+      username: username,
+      email: email,
+      hashedPassword: hashedPassword,
+      salt: salt,
+      fullName: fullName ?? username,
+    );
+
+    if (newAdmin == null) {
+      return {
+        'success': false,
+        'message': 'Failed to create admin user',
+      };
+    }
+
+    return {
+      'success': true,
+      'user': newAdmin.toJson(),
+    };
+  } catch (e) {
+    print('[AdminService] ❌ Error in registerAdmin: $e');
+    return {
+      'success': false,
+      'message': 'Server error: ${e.toString()}',
+    };
+  }
+}
 
 }

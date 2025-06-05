@@ -4,6 +4,7 @@ import 'package:backend/repositories/rating_repository.dart';
 import 'package:backend/models/user.dart';
 import 'package:backend/database/database.dart';
 import 'package:postgres/postgres.dart' as pg;
+import 'package:backend/utils/password_utils.dart';
 
 
 

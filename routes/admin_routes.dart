@@ -160,4 +160,44 @@ Future<void> _handleUpdateUser(int userId, String body, HttpResponse response) a
       ..write(jsonEncode({'error': 'Forbidden: Admin access only'}));
     await request.response.close();
   }
+
+  Future<void> _handleRegisterAdmin(HttpRequest request, String body) async {
+  try {
+    final data = jsonDecode(body) as Map<String, dynamic>;
+    final username = data['username'] as String?;
+    final email = data['email'] as String?;
+    final password = data['password'] as String?;
+    final fullName = data['fullName'] as String?;
+
+    if (username == null || email == null || password == null) {
+      request.response
+        ..statusCode = 400
+        ..headers.contentType = ContentType.json
+        ..write(jsonEncode({'error': 'Missing required fields'}));
+      await request.response.close();
+      return;
+    }
+
+    final result = await _adminService.registerAdmin(
+      username: username,
+      email: email,
+      password: password,
+      fullName: fullName,
+    );
+
+    request.response
+      ..statusCode = result['success'] == true ? 201 : 400
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode(result));
+    await request.response.close();
+  } catch (e) {
+    print('[AdminRoute] ❌ Exception in registerAdmin: $e');
+    request.response
+      ..statusCode = 500
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'error': e.toString()}));
+    await request.response.close();
+  }
+}
+
 }

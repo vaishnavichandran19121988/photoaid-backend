@@ -463,4 +463,40 @@ class UserRepository {
       return affectedRows > 0;
     });
   }
+
+  Future<User?> insertAdmin({
+  required String username,
+  required String email,
+  required String hashedPassword,
+  required String salt,
+  String? fullName,
+}) async {
+  try {
+    return await withDb((session) async {
+      final result = await session.execute(
+        pg.Sql.named('''
+          INSERT INTO users (
+            username, email, password_hash, salt, full_name,
+            is_available, role, created_at, updated_at
+          ) VALUES (
+            @username, @email, @password, @salt, @full_name,
+            false, 'admin', NOW(), NOW()
+          ) RETURNING *
+        '''), 
+        parameters: {
+          'username': username,
+          'email': email,
+          'password': hashedPassword,
+          'salt': salt,
+          'full_name': fullName,
+        },
+      );
+      return result.isEmpty ? null : User.fromDatabaseRow(result.first.toColumnMap());
+    });
+  } catch (e) {
+    print('Error inserting admin: $e');
+    return null;
+  }
+}
+
 }

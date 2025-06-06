@@ -189,5 +189,16 @@ Future<Map<String, dynamic>> registerAdmin({
     print('[AdminService] ✅ [REVIEW] Marking abuse report ID=$reportId as reviewed');
     await _chatRepo.markReportAsReviewed(reportId);
   }
+// ✅ Admin-only: Get full chat messages for any session
+Future<List<Map<String, dynamic>>> getChatMessagesForSession(int sessionId) async {
+  print('[AdminService] 🔍 [CHAT LOG] Fetching messages for session: $sessionId');
+  
+  final messages = await _chatRepo.findBySessionId(sessionId);
+  
+  final mapped = messages.map((msg) => msg.toJson()).toList();
+
+  print('[AdminService] ✅ Found ${mapped.length} messages');
+  return mapped;
+}
 
 }

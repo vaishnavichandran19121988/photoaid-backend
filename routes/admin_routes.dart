@@ -226,14 +226,26 @@ Future<void> _handleUpdateUser(int userId, String body, HttpResponse response) a
     await request.response.close();
   }
 }
-  Future<void> _handleGetUnreviewedAbuseReports(HttpRequest request) async {
+ Future<void> _handleGetUnreviewedAbuseReports(HttpRequest request) async {
   final reports = await _adminService.getUnreviewedAbuseReports();
+
+  // 🔧 Convert DateTime to String
+  final encodedReports = reports.map((report) {
+    return report.map((key, value) {
+      if (value is DateTime) {
+        return MapEntry(key, value.toIso8601String());
+      }
+      return MapEntry(key, value);
+    });
+  }).toList();
+
   request.response
     ..statusCode = 200
     ..headers.contentType = ContentType.json
-    ..write(jsonEncode({'reports': reports}))
+    ..write(jsonEncode({'reports': encodedReports}))
     ..close();
 }
+
   Future<void> _handleMarkAbuseReportReviewed(HttpRequest request, int reportId) async {
   await _adminService.markAbuseReportReviewed(reportId);
   request.response

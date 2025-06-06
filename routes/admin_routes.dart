@@ -48,6 +48,27 @@ class AdminRoutes {
         return true;
       }
 
+      if (path == '/admin/chat-messages' && method == 'GET') {
+  final sessionId = int.tryParse(request.uri.queryParameters['session_id'] ?? '');
+  if (sessionId == null) {
+    request.response
+      ..statusCode = 400
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'error': 'Missing or invalid session_id'}))
+      ..close();
+    return true;
+  }
+
+  final messages = await _adminService.getChatMessagesForSession(sessionId);
+
+  request.response
+    ..statusCode = 200
+    ..headers.contentType = ContentType.json
+    ..write(jsonEncode({'messages': messages}))
+    ..close();
+  return true;
+}
+
       // Dispatcher
       if (path == '/admin/summary' && method == 'GET') {
         await _handleSummary(request);

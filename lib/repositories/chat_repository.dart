@@ -319,9 +319,13 @@ Future<void> markReportAsReviewed(int reportId) async {
     final sql = '''
       UPDATE abuse_reports SET reviewed = TRUE WHERE id = @id
     ''';
-    await session.execute(sql, substitutionValues: {
-      'id': reportId,
-    });
+    await session.execute(
+      pg.Sql.named(sql),
+      parameters: {
+        'id': reportId,
+      },
+    );
   });
 }
+
 }

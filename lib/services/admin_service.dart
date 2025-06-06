@@ -178,6 +178,16 @@ Future<Map<String, dynamic>> registerAdmin({
   }
 }
 
+ Future<List<Map<String, dynamic>>> getUnreviewedAbuseReports() async {
+    print('[AdminService] 🔍 [ABUSE REPORTS] Fetching unreviewed reports');
+    final reports = await _chatRepo.getUnreviewedAbuseReports();
+    print('[AdminService] ✅ Found ${reports.length} unreviewed reports');
+    return reports;
+  }
 
+  Future<void> markAbuseReportReviewed(int reportId) async {
+    print('[AdminService] ✅ [REVIEW] Marking abuse report ID=$reportId as reviewed');
+    await _chatRepo.markReportAsReviewed(reportId);
+  }
 
 }

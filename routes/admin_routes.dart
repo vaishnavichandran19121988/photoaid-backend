@@ -60,7 +60,17 @@ class AdminRoutes {
         return true;
       }
 
-    
+    if (path == '/admin/abuse-reports' && method == 'GET') {
+  await _handleGetUnreviewedAbuseReports(request);
+  return true;
+}
+final reviewMatch = RegExp(r'^/admin/abuse-reports/(\d+)/review$').firstMatch(path);
+if (reviewMatch != null && method == 'POST') {
+  final reportId = int.parse(reviewMatch.group(1)!);
+  await _handleMarkAbuseReportReviewed(request, reportId);
+  return true;
+}
+
 
       final userMatch = RegExp(r'^/admin/user/(\d+)$').firstMatch(path);
       if (userMatch != null) {
@@ -216,5 +226,24 @@ Future<void> _handleUpdateUser(int userId, String body, HttpResponse response) a
     await request.response.close();
   }
 }
+  Future<void> _handleGetUnreviewedAbuseReports(HttpRequest request) async {
+  final reports = await _adminService.getUnreviewedAbuseReports();
+  request.response
+    ..statusCode = 200
+    ..headers.contentType = ContentType.json
+    ..write(jsonEncode({'reports': reports}))
+    ..close();
+}
+  Future<void> _handleMarkAbuseReportReviewed(HttpRequest request, int reportId) async {
+  await _adminService.markAbuseReportReviewed(reportId);
+  request.response
+    ..statusCode = 200
+    ..headers.contentType = ContentType.json
+    ..write(jsonEncode({'success': true}))
+    ..close();
+}
+
+
+
 
 }

@@ -15,6 +15,19 @@ class AdminRoutes {
     print('[AdminRoute] 🔍 Incoming request: ${method.toUpperCase()} $path');
 
     try {
+
+        if (path == '/admin/register' && method == 'POST') {  // ✅ <-- Correct place
+  if (rawBody == null) {
+    request.response
+      ..statusCode = 400
+      ..headers.contentType = ContentType.json
+      ..write(jsonEncode({'error': 'Missing request body'}));
+    await request.response.close();
+    return true;
+  }
+  await _handleRegisterAdmin(request, rawBody);
+  return true;
+}
       // Verify token first
       final authHeader = request.headers.value('Authorization');
       if (authHeader == null || !authHeader.startsWith('Bearer ')) {
@@ -47,18 +60,7 @@ class AdminRoutes {
         return true;
       }
 
-      if (path == '/admin/register' && method == 'POST') {  // ✅ <-- Correct place
-  if (rawBody == null) {
-    request.response
-      ..statusCode = 400
-      ..headers.contentType = ContentType.json
-      ..write(jsonEncode({'error': 'Missing request body'}));
-    await request.response.close();
-    return true;
-  }
-  await _handleRegisterAdmin(request, rawBody);
-  return true;
-}
+    
 
       final userMatch = RegExp(r'^/admin/user/(\d+)$').firstMatch(path);
       if (userMatch != null) {

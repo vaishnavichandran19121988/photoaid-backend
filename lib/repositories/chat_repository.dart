@@ -299,4 +299,25 @@ class ChatRepository {
       rethrow;
     }
   }
+
+  Future<List<Map<String, dynamic>>> getUnreviewedAbuseReports() async {
+    final sql = '''
+      SELECT id, reporter_id, reported_user_id, session_id, reason, created_at, reviewed
+      FROM abuse_reports
+      WHERE reviewed = FALSE
+      ORDER BY created_at DESC
+    ''';
+    final result = await db.query(sql);
+    return result;
+  }
+
+  /// Mark abuse report as reviewed
+  Future<void> markReportAsReviewed(int reportId) async {
+    final sql = '''
+      UPDATE abuse_reports SET reviewed = TRUE WHERE id = @id
+    ''';
+    await db.execute(sql, substitutionValues: {
+      'id': reportId,
+    });
+  }
 }

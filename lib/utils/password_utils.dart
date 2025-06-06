@@ -1,7 +1,3 @@
-import 'dart:convert';
-import 'dart:math';
-import 'package:crypto/crypto.dart';
-
 class PasswordUtils {
   static String generateSalt() {
     final random = Random.secure();
@@ -10,9 +6,8 @@ class PasswordUtils {
   }
 
   static String hashPassword(String password, String salt) {
-    final codec = Utf8Codec();
-    final key = codec.encode(password);
-    final saltBytes = codec.encode(salt);
+    final key = utf8.encode(password);
+    final saltBytes = base64Decode(salt);  // <-- FIXED
     final hmac = Hmac(sha256, key);
     final digest = hmac.convert(saltBytes);
     return digest.toString();

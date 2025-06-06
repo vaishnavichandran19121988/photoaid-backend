@@ -5,6 +5,8 @@ import 'package:backend/models/user.dart';
 import 'package:backend/database/database.dart';
 import 'package:postgres/postgres.dart' as pg;
 import 'package:backend/utils/password_utils.dart';
+import 'package:backend/repositories/chat_repository.dart';
+
 
 
 

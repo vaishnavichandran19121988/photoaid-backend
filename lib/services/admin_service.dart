@@ -12,6 +12,8 @@ class AdminService {
   final _userRepo = UserRepository();
   final _sessionRepo = SessionRepository();
   final _ratingRepo = RatingRepository();
+  final _chatRepo = ChatRepository();
+
 
   // ✅ Get dashboard summary counts
   Future<Map<String, int>> getSummary() async {
@@ -170,7 +172,21 @@ Future<Map<String, dynamic>> registerAdmin({
       'success': false,
       'message': 'Server error: ${e.toString()}',
     };
+    
   }
 }
+  Future<List<Map<String, dynamic>>> getUnreviewedAbuseReports() async {
+  print('[AdminService] 🔍 [ABUSE REPORTS] Fetching unreviewed reports');
+  final reports = await _chatRepo.getUnreviewedAbuseReports();
+  print('[AdminService] ✅ Found ${reports.length} unreviewed reports');
+  return reports;
+}
+
+
+  Future<void> markAbuseReportReviewed(int reportId) async {
+  print('[AdminService] ✅ [REVIEW] Marking abuse report ID=$reportId as reviewed');
+  await _chatRepo.markReportAsReviewed(reportId);
+}
+
 
 }

@@ -177,17 +177,29 @@ Future<Map<String, dynamic>> registerAdmin({
     
   }
 }
-  Future<List<Map<String, dynamic>>> getUnreviewedAbuseReports() async {
-  print('[AdminService] 🔍 [ABUSE REPORTS] Fetching unreviewed reports');
-  final reports = await _chatRepo.getUnreviewedAbuseReports();
-  print('[AdminService] ✅ Found ${reports.length} unreviewed reports');
-  return reports;
+Future<List<Map<String, dynamic>>> getUnreviewedAbuseReports() async {
+  return await withDb((session) async {
+    final sql = '''
+      SELECT id, reporter_id, reported_user_id, session_id, reason, created_at, reviewed
+      FROM abuse_reports
+      WHERE reviewed = FALSE
+      ORDER BY created_at DESC
+    ''';
+    final result = await session.execute(sql);
+    return result.map((r) => r.toColumnMap()).toList();
+  });
 }
 
 
-  Future<void> markAbuseReportReviewed(int reportId) async {
-  print('[AdminService] ✅ [REVIEW] Marking abuse report ID=$reportId as reviewed');
-  await _chatRepo.markReportAsReviewed(reportId);
+Future<void> markReportAsReviewed(int reportId) async {
+  await withDb((session) async {
+    final sql = '''
+      UPDATE abuse_reports SET reviewed = TRUE WHERE id = @id
+    ''';
+    await session.execute(sql, substitutionValues: {
+      'id': reportId,
+    });
+  });
 }
 
 
